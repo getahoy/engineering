@@ -57,8 +57,8 @@ obviously safe.
 **Never create a branch on your own.** The user says when to branch. Until told, stay on the
 current branch.
 
-**`docs` and `engineering` never get branches.** Changes there are left uncommitted for the
-user unless the user says to commit.
+**`docs` and `engineering` branch only when the user says.** Changes there are left
+uncommitted for the user unless the user says to commit.
 
 Per feature, once the user says to branch:
 
@@ -481,9 +481,14 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   `src/app/globals.css` are the tokens file. Use token classes (`bg-background`,
   `text-muted-foreground`, `text-destructive`, …), never raw palette colours like
   `bg-red-500`.
-- Add primitives only with `pnpm dlx shadcn@latest add <name>`. `src/components/ui/` is
-  CLI-owned: never hand-edit it, it is excluded from Biome. Customise by wrapping in a
-  feature component.
+- Add primitives only with `pnpm dlx shadcn@latest add <name>`.
+- **A CLI-added component is ours the moment it lands. There is no no-touch zone.** Applies
+  to shadcn in `web` and React Native Reusables in `mobile` alike. Every component a UI
+  CLI writes gets a cleanup pass in the same commit: strip comments, named exports only,
+  under 200 lines, every visual value from the tokens file, passes Biome like any other
+  file. A component is not "added" until it passes our rules.
+- Never re-run a UI CLI with `--overwrite` on a cleaned component: it silently replaces our
+  work. Updates are deliberate edits.
 - `cn` comes from the `cn` package (shadcn's). There is no `lib/utils.ts`.
 
 ## Safety
@@ -517,9 +522,15 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 
 ## Dependencies
 
-- Hooks come from `react-haiku`. Check it before writing a hook or adding a hooks library.
-  On React Native, where a needed Haiku hook is DOM-only, write the equivalent once in
-  `shared` with Haiku's name. Never a second hooks library.
+- **Hooks:** never write a custom hook before checking, in this order:
+  1. `react-haiku`
+  2. usehooks.com (`@uidotdev/usehooks`)
+
+  Only write our own when neither has it. Both are DOM-first, so many of their hooks do
+  not work on React Native: check, then adapt or write the RN equivalent. Never import
+  one into `mobile` blindly. When ours is the RN equivalent of a DOM-only hook from
+  either, keep their name so both codebases read the same, and put it in `shared`. Never
+  add a third hooks library.
 - Vercel AI SDK may be used inside an adapter, never in place of a port.
 
 ## Package manager: pnpm
@@ -539,6 +550,35 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   real message.
 - Android: network security config permitting cleartext to private ranges only
   (`192.168/16`, `10/8`, `172.16/12`, `.local`). Never global `usesCleartextTraffic`.
+- iOS ATS blocks the plain `http` LAN origin with a generic network error. Allow it in the
+  same config plugin as `NSLocalNetworkUsageDescription`, scoped to local networking, never
+  a global ATS opt-out.
+
+### Styling: Uniwind only
+
+- Uniwind is the only styling library in `mobile`. No `StyleSheet.create`, no inline style
+  objects, no second styling library.
+- Tokens: every colour, spacing, radius and font size comes from the one tokens file
+  (`global.css`, Tailwind 4 theme variables), consumed through Uniwind. Never hardcoded in
+  a component.
+- `withUniwindConfig` is the **outermost** Metro wrapper. Any later Metro wrapper (Sentry,
+  etc.) goes inside it.
+- Uniwind needs no Expo config plugin and no Babel plugin. Native config plugins (local
+  network, ATS, cleartext) are independent of it.
+- The component kit is React Native Reusables, Uniwind variant, added only through its CLI
+  (`npx @react-native-reusables/cli@latest add <name> --styling-library uniwind`).
+  The component ownership and `--overwrite` rules under "UI" apply in full.
+- Native SwiftUI/Compose views (`@expo/ui`) take no `className`, so they are out.
+
+### Animation: Reanimated only
+
+- `react-native-reanimated` for all animation in `mobile`. No `Animated` API, no other
+  animation library.
+- The one allowed style object is the animated style returned by `useAnimatedStyle`,
+  passed as `style`. Everything static stays in `className`.
+- Expo (SDK 54+) adds the worklets Babel plugin through `babel-preset-expo`. Never add it
+  by hand: it would run twice. If a `babel.config.js` is ever needed for another reason,
+  `react-native-worklets/plugin` goes last in `plugins`.
 
 ## Tests
 

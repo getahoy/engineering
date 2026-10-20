@@ -90,6 +90,11 @@ fix/pairing-reconnect-after-sleep
 
 ### Commit messages
 
+- Split work into small commits, one per cohesive unit, in build-up order: dependencies →
+  env/config → data layer → pure logic with its tests → server wiring → tokens/styles → UI
+  components → screens/pages. Files that are used together go in the same commit (an env
+  variable lands with the code that first reads it). Never one giant commit, never one
+  commit per file.
 - Prefix: `feat` / `fix` / `chore` / `refactor` / `docs` / `test`.
 - Subject lowercase, imperative, no trailing period, 72 characters max.
 - Body is short bullets. No paragraphs.
@@ -222,6 +227,13 @@ fake.
 
 - No file over 200 lines. Target under 100. An exception needs a reason you'd defend in review.
 - No function over ~40 lines.
+- **Every file name is camelCase**: `authClient.ts`, `signInScreen.tsx`, `useSignOut.ts`.
+  Never kebab-case or snake_case. Enforced by Biome `useFilenamingConvention`. Only
+  framework-mandated names are exempt (`page.tsx`, `layout.tsx`, `route.ts`,
+  `globals.css`, `*.config.ts`, generated migrations), and route folders keep URL casing
+  (`app/sign-in/`).
+- API calls live in hooks (`useSignIn`, `useSignOut`, …), one per action. Screens and
+  components never call an API client directly.
 - One component per file. Never define a component inside another file's component.
 - Group by feature, not by kind.
 - Banned filenames: `utils.ts`, `helpers.ts`, `common.ts`, `misc.ts`. Name files after what

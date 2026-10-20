@@ -38,12 +38,3 @@ issue, return) needs an interactive one.
 Rejected: `neon-http` for reads plus a second client for transactions (two clients for six
 tables).
 Reverse: swap the driver in `web`'s DB module; queries are unchanged.
-
-## 2026-10-20 — Living docs live in `engineering/`, a private repo; `CLAUDE.md` symlinked at root
-
-`CLAUDE.md`, `decisions.md` and `flow.md` sit outside `docs/` so they can become their own
-private repo. The workspace folder is not a repo, so a root file would be unversioned; Claude
-Code walks up the tree, so the root symlink loads `engineering/CLAUDE.md` from every sibling
-repo.
-Rejected: keeping them in `getahoy/docs` (that spec repo may not stay private).
-Reverse: move the files back and repoint the symlink.

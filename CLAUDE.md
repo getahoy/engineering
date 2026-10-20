@@ -54,7 +54,13 @@ these rules (`!`, comments).
 Never push to `main`. Not after a rebase, not for a one-line fix, not because the change is
 obviously safe.
 
-Per feature:
+**Never create a branch on your own.** The user says when to branch. Until told, stay on the
+current branch.
+
+**`docs` and `engineering` never get branches.** Changes there are left uncommitted for the
+user unless the user says to commit.
+
+Per feature, once the user says to branch:
 
 1. `git checkout main && git pull origin main`
 2. `git checkout -b <type>/<area>-<what-was-solved>`
@@ -140,10 +146,14 @@ When a reviewer misses something the user catches, add the rule to that agent's 
 
 ### Enforcement
 
-- Git hooks, committed in every repo under `.githooks/`, activated with
-  `git config core.hooksPath .githooks`:
+- Git hooks, committed in every repo under `.githooks/` **with the executable bit set**
+  (`chmod +x` before the first commit; git tracks the mode):
   - `commit-msg` validates the final message, however it was produced.
   - `pre-push` reads the refs being pushed and blocks `main`.
+- Activation is identical in all five repos: `package.json` carries
+  `"prepare": "git config core.hooksPath .githooks || true"`. `docs` and `engineering` get a
+  minimal `package.json` holding only that (`"private": true` + the script). Never a manual
+  setup step. Never let hook setup break an install — the `|| true` stays.
 - One Claude Code PreToolUse hook blocks any command containing `--no-verify`, `git add -A`
   or `git add .`. It writes its reason to stderr and exits 2.
 - Never bypass a hook. A hook that is wrong gets fixed in its own change.
@@ -165,9 +175,11 @@ Too large or repetitive for Edit means the file should be split, not scripted.
 - `engineering/flow.md` — entry-point table per app, then one call chain per major flow with file
   paths, marking every process / network / port boundary.
 - `engineering/decisions.md` — append-only, newest first, ~4 lines each: what, why, rejected,
-  how to reverse. Log it if a reasonable engineer could choose otherwise, undoing costs
-  over an hour, it surprised you, or it constrains future work. Not obvious defaults, not
-  rules already here, not naming. Reversals get a new entry linking back.
+  how to reverse. **Code-level design decisions only**: architecture, data model, protocol,
+  library or driver choice, an algorithm. Log it if a reasonable engineer could choose
+  otherwise, undoing costs over an hour, it surprised you, or it constrains future work.
+  Never log workflow, git, tooling, hooks, doc layout, obvious defaults, rules already in
+  this file, or naming. Reversals get a new entry linking back.
 - `CLAUDE.md` — only when a rule changes.
 
 ## Feature order

@@ -8,8 +8,7 @@ edited.
 
 The deciding reason is copy-in: the component source lands in our repo, so it can be made
 to obey CLAUDE.md (file size, comments, exports, tokens). An installed kit is a black box
-that can never meet those rules. Every CLI-added component gets a cleanup pass in the
-same commit. Uniwind variant, to match the styling decision below.
+that can never meet those rules. Uniwind variant, to match the styling decision below.
 Rejected: HeroUI Native (installed package, rules unenforceable inside it).
 Reverse: delete `components/ui/` and install another kit; screens keep their hooks.
 

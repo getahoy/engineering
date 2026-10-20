@@ -482,13 +482,6 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   `text-muted-foreground`, `text-destructive`, …), never raw palette colours like
   `bg-red-500`.
 - Add primitives only with `pnpm dlx shadcn@latest add <name>`.
-- **A CLI-added component is ours the moment it lands. There is no no-touch zone.** Applies
-  to shadcn in `web` and React Native Reusables in `mobile` alike. Every component a UI
-  CLI writes gets a cleanup pass in the same commit: strip comments, named exports only,
-  under 200 lines, every visual value from the tokens file, passes Biome like any other
-  file. A component is not "added" until it passes our rules.
-- Never re-run a UI CLI with `--overwrite` on a cleaned component: it silently replaces our
-  work. Updates are deliberate edits.
 - `cn` comes from the `cn` package (shadcn's). There is no `lib/utils.ts`.
 
 ## Safety
@@ -567,7 +560,6 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   network, ATS, cleartext) are independent of it.
 - The component kit is React Native Reusables, Uniwind variant, added only through its CLI
   (`npx @react-native-reusables/cli@latest add <name> --styling-library uniwind`).
-  The component ownership and `--overwrite` rules under "UI" apply in full.
 - Native SwiftUI/Compose views (`@expo/ui`) take no `className`, so they are out.
 
 ### Animation: Reanimated only

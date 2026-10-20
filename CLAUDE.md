@@ -477,6 +477,14 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   hardcoded visual value in any component.
 - Containers own state and data; presentational components take typed props only.
 - Every screen ships loading, empty, error and offline states plus accessibility labels.
+- **`web` uses shadcn** (base-nova preset, Base UI). Its CSS variables in
+  `src/app/globals.css` are the tokens file. Use token classes (`bg-background`,
+  `text-muted-foreground`, `text-destructive`, …), never raw palette colours like
+  `bg-red-500`.
+- Add primitives only with `pnpm dlx shadcn@latest add <name>`. `src/components/ui/` is
+  CLI-owned: never hand-edit it, it is excluded from Biome. Customise by wrapping in a
+  feature component.
+- `cn` comes from the `cn` package (shadcn's). There is no `lib/utils.ts`.
 
 ## Safety
 

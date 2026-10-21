@@ -13,15 +13,57 @@ quietly.
   CLAUDE.md     symlink → engineering/CLAUDE.md, loaded by every session in any repo below
   engineering/  private repo    CLAUDE.md (canonical), decisions.md, flow.md
   docs/         getahoy/docs    the spec
-  shared/     getahoy/shared   @getahoy/protocol, crypto, lib  → GitHub Packages
+  shared/     getahoy/shared   @getahoy/lib → GitHub Packages
   mobile/     getahoy/mobile   Expo / React Native, iOS + Android
   agent/      getahoy/agent    Electron + the Swift helper
   web/        getahoy/web      Next.js site, Better Auth, API
 ```
 
 - Edit `engineering/CLAUDE.md` directly. The root `CLAUDE.md` is only a symlink to it.
-- `shared` holds exactly three packages: `protocol`, `crypto`, `lib`. Nothing else, ever,
-  unless two apps genuinely need it. "It feels important" is not a reason.
+- **Never add anything to `shared` without asking the user first.** This covers new
+  packages and new files inside existing packages. Propose it with one line of reasoning
+  and wait. The user decides; there is no rule to evaluate instead.
+
+### Shared packages
+
+| Package | Why it is shared | May depend on |
+|---|---|---|
+| `lib` | `ErrorCode`, `errorMessages`, `parseInput`, credentials schemas, `MINIMUM_PASSWORD_LENGTH` and `MAXIMUM_PASSWORD_LENGTH` (Better Auth enforces both on the server), `APP_SCHEME` (web trusts `ahoy://`, mobile registers it); small and stable | nothing |
+
+`protocol` (messages, and the Bonjour type `_ahoy._tcp` at feature 3) and `crypto` (key
+derivation) are created with the features that need them. Tokens stay in each app's own
+CSS until UI work starts.
+
+- App-specific code stays in the app even when the other app has a copy (auth today:
+  `web` and `mobile` each own `features/auth`).
+- **No rendering in shared.** No JSX in any shared package. Each platform writes its own
+  markup against the same props contract and the same hooks.
+- **No platform prop and no platform branching in shared.** Shared code varies only on an
+  injected dependency or capability (`signIn`, `onSuccess`), never on a name like "web"
+  or "ios".
+- Peers, never dependencies: `react`, `zod` and sibling `@getahoy/*` packages are
+  `peerDependencies` (dev-linked with `workspace:*` inside `shared`), so apps never get a
+  second copy. A second React makes every hook throw "Invalid hook call".
+- ESM only (`dist/index.mjs` + types). No dual CommonJS build.
+- Every user-facing auth string comes from the app's `authCopy` keys (`"signIn.title"`).
+  No inline strings in screens.
+
+### Mirrored apps
+
+`web` and `mobile` use the same folder layout, file names, hook names and props contracts
+under `src/features/<feature>/`: `client/` (the platform client), `hooks/`, `copy/`,
+`errors/`, `forms/`, `components/`, `screens/`.
+Only the markup and platform glue differ.
+
+### Local dev loop
+
+- Apps depend on shared packages through `file:../shared/packages/<name>`. pnpm copies the
+  built `dist` and resolves peers from the app, so there is exactly one React and one Zod.
+  Never `link:`: the symlink pulls `shared`'s own React and Zod into the bundle (measured:
+  two Reacts in the mobile bundle).
+- After changing `shared`: `pnpm build` in `shared`, then `pnpm install` in each app to
+  re-sync the copy (under 150 ms).
+- CI and releases use published pinned versions once `shared` is on GitHub Packages.
 - `resolver`, `grammar` and `llm` live in `agent/src/core/`. The phone never resolves
   anything. They stay pure and fixture-testable there.
 - `decisions.md` and `flow.md` live in `engineering/` only, never inside an app repo,
@@ -57,8 +99,8 @@ obviously safe.
 **Never create a branch on your own.** The user says when to branch. Until told, stay on the
 current branch.
 
-**`docs` and `engineering` never get branches.** Changes there are left uncommitted for the
-user unless the user says to commit.
+**`docs` and `engineering` branch only when the user says.** Changes there are left
+uncommitted for the user unless the user says to commit.
 
 Per feature, once the user says to branch:
 
@@ -481,9 +523,7 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   `src/app/globals.css` are the tokens file. Use token classes (`bg-background`,
   `text-muted-foreground`, `text-destructive`, …), never raw palette colours like
   `bg-red-500`.
-- Add primitives only with `pnpm dlx shadcn@latest add <name>`. `src/components/ui/` is
-  CLI-owned: never hand-edit it, it is excluded from Biome. Customise by wrapping in a
-  feature component.
+- Add primitives only with `pnpm dlx shadcn@latest add <name>`.
 - `cn` comes from the `cn` package (shadcn's). There is no `lib/utils.ts`.
 
 ## Safety
@@ -517,9 +557,15 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 
 ## Dependencies
 
-- Hooks come from `react-haiku`. Check it before writing a hook or adding a hooks library.
-  On React Native, where a needed Haiku hook is DOM-only, write the equivalent once in
-  `shared` with Haiku's name. Never a second hooks library.
+- **Hooks:** never write a custom hook before checking, in this order:
+  1. `react-haiku`
+  2. usehooks.com (`@uidotdev/usehooks`)
+
+  Only write our own when neither has it. Both are DOM-first, so many of their hooks do
+  not work on React Native: check, then adapt or write the RN equivalent. Never import
+  one into `mobile` blindly. When ours is the RN equivalent of a DOM-only hook from
+  either, keep their name so both codebases read the same, and put it in `shared`. Never
+  add a third hooks library.
 - Vercel AI SDK may be used inside an adapter, never in place of a port.
 
 ## Package manager: pnpm
@@ -530,6 +576,8 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 - Every consuming repo's `.npmrc`: `@getahoy:registry=https://npm.pkg.github.com`.
 - `mobile/.npmrc` also has `node-linker=hoisted` from day one (Metro + symlinks).
 - Apps depend on pinned `@getahoy/*` versions, never ranges.
+- When bumping `better-auth` or `@better-auth/expo`, bump both `web` and `mobile` in the
+  same session.
 
 ## Mobile specifics
 
@@ -539,6 +587,34 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   real message.
 - Android: network security config permitting cleartext to private ranges only
   (`192.168/16`, `10/8`, `172.16/12`, `.local`). Never global `usesCleartextTraffic`.
+- iOS ATS blocks the plain `http` LAN origin with a generic network error. Allow it in the
+  same config plugin as `NSLocalNetworkUsageDescription`, scoped to local networking, never
+  a global ATS opt-out.
+
+### Styling: Uniwind only
+
+- Uniwind is the only styling library in `mobile`. No `StyleSheet.create`, no inline style
+  objects, no second styling library.
+- Tokens: every colour, spacing, radius and font size comes from the one tokens file
+  (`global.css`, Tailwind 4 theme variables), consumed through Uniwind. Never hardcoded in
+  a component.
+- `withUniwindConfig` is the **outermost** Metro wrapper. Any later Metro wrapper (Sentry,
+  etc.) goes inside it.
+- Uniwind needs no Expo config plugin and no Babel plugin. Native config plugins (local
+  network, ATS, cleartext) are independent of it.
+- The component kit is React Native Reusables, Uniwind variant, added only through its CLI
+  (`npx @react-native-reusables/cli@latest add <name> --styling-library uniwind`).
+- Native SwiftUI/Compose views (`@expo/ui`) take no `className`, so they are out.
+
+### Animation: Reanimated only
+
+- `react-native-reanimated` for all animation in `mobile`. No `Animated` API, no other
+  animation library.
+- The one allowed style object is the animated style returned by `useAnimatedStyle`,
+  passed as `style`. Everything static stays in `className`.
+- Expo (SDK 54+) adds the worklets Babel plugin through `babel-preset-expo`. Never add it
+  by hand: it would run twice. If a `babel.config.js` is ever needed for another reason,
+  `react-native-worklets/plugin` goes last in `plugins`.
 
 ## Tests
 

@@ -13,32 +13,31 @@ quietly.
   CLAUDE.md     symlink → engineering/CLAUDE.md, loaded by every session in any repo below
   engineering/  private repo    CLAUDE.md (canonical), decisions.md, flow.md
   docs/         getahoy/docs    the spec
-  shared/     getahoy/shared   @getahoy/protocol, crypto, lib, auth, tokens → GitHub Packages
+  shared/     getahoy/shared   @getahoy/protocol, crypto, lib, tokens → GitHub Packages
   mobile/     getahoy/mobile   Expo / React Native, iOS + Android
   agent/      getahoy/agent    Electron + the Swift helper
   web/        getahoy/web      Next.js site, Better Auth, API
 ```
 
 - Edit `engineering/CLAUDE.md` directly. The root `CLAUDE.md` is only a symlink to it.
-- Anything two apps repeat or reuse lives in `shared`, split by domain into its own
-  package. Never dump unrelated code into `lib`. "It feels important" is not a reason; a
-  second app needing it is.
+- **Never add a package to `shared`, or move code into it, without asking the user first.**
+  The test is whether the product is *wrong* when the two sides disagree (a wire format,
+  a key derivation, a visual token), not whether code is duplicated. Duplication is
+  acceptable. A broken wire format is not.
 
 ### Shared packages
 
-| Package | Owns | May depend on |
+| Package | Why it is shared | May depend on |
 |---|---|---|
-| `tokens` | colours, spacing, radii, font sizes as plain values | nothing |
-| `protocol` | message schemas between apps | nothing |
-| `crypto` | pairing and frame encryption | nothing |
-| `lib` | generic building blocks: `ErrorCode`, `errorMessages`, `parseInput` | `protocol` |
-| `auth` | headless auth: schemas, `authCopy`, error mapping, injected-dependency hooks | `lib`, `tokens` |
+| `protocol` | phone and agent must agree on messages or the product breaks | nothing |
+| `crypto` | both sides must derive the same key or pairing fails | nothing |
+| `tokens` | both apps must look the same | nothing |
+| `lib` | `ErrorCode`, `errorMessages`, `parseInput` only; small and stable | `protocol` |
 
-- **A new shared package needs a reason that breaks the product when two apps disagree**
-  (a schema, a wire format, a password minimum, a token). Duplication alone is not a
-  reason.
-- `lib` never imports `auth`. `ErrorCode` stays in `lib`; `auth` maps provider errors
-  onto it and adds its own wording in `authCopy`.
+- The graph is enforced in CI by `pnpm check:graph` in `shared`: no cycles, no edge
+  outside this table.
+- App-specific code stays in the app even when the other app has a copy (auth today:
+  `web` and `mobile` each own `features/auth`).
 - **No rendering in shared.** No JSX in any shared package. Each platform writes its own
   markup against the same props contract and the same hooks.
 - **No platform prop and no platform branching in shared.** Shared code varies only on an
@@ -48,15 +47,18 @@ quietly.
   `peerDependencies` (dev-linked with `workspace:*` inside `shared`), so apps never get a
   second copy. A second React makes every hook throw "Invalid hook call".
 - ESM only (`dist/index.mjs` + types). No dual CommonJS build.
-- Every user-facing auth string comes from `authCopy` keys (`"signIn.title"`). No inline
-  strings in screens.
+- Every user-facing auth string comes from the app's `authCopy` keys (`"signIn.title"`).
+  No inline strings in screens.
+- Tokens reach the apps as generated CSS: `web` imports `@getahoy/tokens/tailwind.css`,
+  `mobile` imports `@getahoy/tokens/uniwind.css`. No hand-written colour, radius or size
+  values in either app.
 
 ### Mirrored apps
 
 `web` and `mobile` use the same folder layout, file names, hook names and props contracts
 under `src/features/<feature>/`: `client/` (platform client and the actions injected into
-shared hooks), `hooks/` (platform glue such as `useAuthNavigation`), `forms/`,
-`components/`, `screens/`. Only the markup and platform glue differ.
+the feature's hooks), `hooks/`, `copy/`, `errors/`, `forms/`, `components/`, `screens/`.
+Only the markup and platform glue differ.
 
 ### Local dev loop
 

@@ -4,6 +4,16 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-22 — Shared shrinks to protocol, crypto, tokens, lib; auth returns to the apps
+
+Reverses the auth half of "Shared is split by domain" (below). Auth changes daily, so a
+shared package made the rebuild-and-resync cost worst exactly where work is fastest. Each
+app now owns `features/auth`, mobile with its own copy. Shared keeps only what makes the
+product wrong when the two sides disagree: protocol (messages), crypto (key derivation),
+tokens (look), and lib (error codes, parseInput). Duplicated auth code is accepted.
+Rejected: keeping `@getahoy/auth` (cost without a correctness reason).
+Reverse: recreate the package from `web/src/features/auth`, ask first.
+
 ## 2026-10-22 — Shared is split by domain: auth and tokens leave lib
 
 `@getahoy/auth` holds headless auth (schemas, `authCopy`, provider error mapping, hooks

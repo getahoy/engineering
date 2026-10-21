@@ -4,6 +4,27 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-22 — App scheme and password maximum live in `@getahoy/lib`
+
+`APP_SCHEME` feeds the server's `trustedOrigins` and the phone's registered scheme
+(`app.json` became `app.config.ts` to import it). A mismatch passes in dev, where the expo
+plugin trusts `exp://`, and fails only in production with `INVALID_ORIGIN`.
+`MAXIMUM_PASSWORD_LENGTH` (128) is set explicitly on Better Auth and checked by the
+sign-up schema, so a long password fails on the form, not after a round trip.
+Rejected: sharing the Better Auth version as code, and a CI check comparing the pins (a
+cross-repo read token is more upkeep than the bug; drift breaks mobile sign-in on the next
+test). Both pins are bumped in the same session.
+Reverse: inline the constants in each app.
+
+## 2026-10-22 — Credentials schemas live in `@getahoy/lib`
+
+`MINIMUM_PASSWORD_LENGTH` is the server's rule (`minPasswordLength` in Better Auth), so both
+clients and the server read one constant. `credentialsSchemas(messages)` takes the
+validation copy as input, because copy stays in each app's `authCopy`.
+Rejected: messages inside lib (moves copy into shared), copy keys as messages (string keys
+across the boundary).
+Reverse: copy the schema file back into each app.
+
 ## 2026-10-22 — Shared is lib only; protocol, crypto and tokens removed
 
 Revises the entry below. `protocol` and `crypto` were empty stubs nothing imported.

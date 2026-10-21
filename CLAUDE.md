@@ -20,19 +20,19 @@ quietly.
 ```
 
 - Edit `engineering/CLAUDE.md` directly. The root `CLAUDE.md` is only a symlink to it.
-- **Never add a package to `shared`, or move code into it, without asking the user first.**
-  The test is whether the product is *wrong* when the two sides disagree (a wire format,
-  a key derivation, a visual token), not whether code is duplicated. Duplication is
-  acceptable. A broken wire format is not.
+- **Never add anything to `shared` without asking the user first.** This covers new
+  packages and new files inside existing packages. Propose it with one line of reasoning
+  and wait. The user decides; there is no rule to evaluate instead.
 
 ### Shared packages
 
 | Package | Why it is shared | May depend on |
 |---|---|---|
-| `lib` | `ErrorCode`, `errorMessages`, `parseInput` only; small and stable | nothing |
+| `lib` | `ErrorCode`, `errorMessages`, `parseInput`, credentials schemas, `MINIMUM_PASSWORD_LENGTH` and `MAXIMUM_PASSWORD_LENGTH` (Better Auth enforces both on the server), `APP_SCHEME` (web trusts `ahoy://`, mobile registers it); small and stable | nothing |
 
-`protocol` (messages) and `crypto` (key derivation) are created with the features that
-need them. Tokens stay in each app's own CSS until UI work starts.
+`protocol` (messages, and the Bonjour type `_ahoy._tcp` at feature 3) and `crypto` (key
+derivation) are created with the features that need them. Tokens stay in each app's own
+CSS until UI work starts.
 
 - App-specific code stays in the app even when the other app has a copy (auth today:
   `web` and `mobile` each own `features/auth`).
@@ -51,8 +51,8 @@ need them. Tokens stay in each app's own CSS until UI work starts.
 ### Mirrored apps
 
 `web` and `mobile` use the same folder layout, file names, hook names and props contracts
-under `src/features/<feature>/`: `client/` (platform client and the actions injected into
-the feature's hooks), `hooks/`, `copy/`, `errors/`, `forms/`, `components/`, `screens/`.
+under `src/features/<feature>/`: `client/` (the platform client), `hooks/`, `copy/`,
+`errors/`, `forms/`, `components/`, `screens/`.
 Only the markup and platform glue differ.
 
 ### Local dev loop
@@ -576,6 +576,8 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 - Every consuming repo's `.npmrc`: `@getahoy:registry=https://npm.pkg.github.com`.
 - `mobile/.npmrc` also has `node-linker=hoisted` from day one (Metro + symlinks).
 - Apps depend on pinned `@getahoy/*` versions, never ranges.
+- When bumping `better-auth` or `@better-auth/expo`, bump both `web` and `mobile` in the
+  same session.
 
 ## Mobile specifics
 

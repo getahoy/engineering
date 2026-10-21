@@ -248,6 +248,18 @@ Too large or repetitive for Edit means the file should be split, not scripted.
 | 13 | Website + payments | People can buy it |
 | 14 | Hardening | The remaining corner cases |
 
+**Deferred, not dropped** (pick up before the feature it names closes):
+
+- **Mobile Google errors (feature 2).** The browser sheet hides the callback error, so mobile
+  shows one generic line. Fix: native Google Sign-In (`@react-native-google-signin/google-signin`)
+  sending the ID token to Better Auth (`signIn.social({ idToken })`). Needs an iOS OAuth client
+  ID; the server `clientId` becomes `[web, ios]`. Errors then come back as JSON
+  (`OAUTH_LINK_ERROR` "account not linked"), mapped with the same messages as web's
+  `socialErrorMessage`.
+- **Email verification (feature 2).** Until emails are verified, Better Auth will not link
+  Google to an existing password account (`account_not_linked`). Verification makes linking
+  automatic; never relax `requireLocalEmailVerified` instead.
+
 **Everything is real.** No mocks of our own apps, no fake agent, no stub to replace later.
 If a feature needs phone and Mac, build both halves in it. Empty and correct beats full and
 fake.

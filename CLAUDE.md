@@ -13,15 +13,60 @@ quietly.
   CLAUDE.md     symlink → engineering/CLAUDE.md, loaded by every session in any repo below
   engineering/  private repo    CLAUDE.md (canonical), decisions.md, flow.md
   docs/         getahoy/docs    the spec
-  shared/     getahoy/shared   @getahoy/protocol, crypto, lib  → GitHub Packages
+  shared/     getahoy/shared   @getahoy/protocol, crypto, lib, auth, tokens → GitHub Packages
   mobile/     getahoy/mobile   Expo / React Native, iOS + Android
   agent/      getahoy/agent    Electron + the Swift helper
   web/        getahoy/web      Next.js site, Better Auth, API
 ```
 
 - Edit `engineering/CLAUDE.md` directly. The root `CLAUDE.md` is only a symlink to it.
-- `shared` holds exactly three packages: `protocol`, `crypto`, `lib`. Nothing else, ever,
-  unless two apps genuinely need it. "It feels important" is not a reason.
+- Anything two apps repeat or reuse lives in `shared`, split by domain into its own
+  package. Never dump unrelated code into `lib`. "It feels important" is not a reason; a
+  second app needing it is.
+
+### Shared packages
+
+| Package | Owns | May depend on |
+|---|---|---|
+| `tokens` | colours, spacing, radii, font sizes as plain values | nothing |
+| `protocol` | message schemas between apps | nothing |
+| `crypto` | pairing and frame encryption | nothing |
+| `lib` | generic building blocks: `ErrorCode`, `errorMessages`, `parseInput` | `protocol` |
+| `auth` | headless auth: schemas, `authCopy`, error mapping, injected-dependency hooks | `lib`, `tokens` |
+
+- **A new shared package needs a reason that breaks the product when two apps disagree**
+  (a schema, a wire format, a password minimum, a token). Duplication alone is not a
+  reason.
+- `lib` never imports `auth`. `ErrorCode` stays in `lib`; `auth` maps provider errors
+  onto it and adds its own wording in `authCopy`.
+- **No rendering in shared.** No JSX in any shared package. Each platform writes its own
+  markup against the same props contract and the same hooks.
+- **No platform prop and no platform branching in shared.** Shared code varies only on an
+  injected dependency or capability (`signIn`, `onSuccess`), never on a name like "web"
+  or "ios".
+- Peers, never dependencies: `react`, `zod` and sibling `@getahoy/*` packages are
+  `peerDependencies` (dev-linked with `workspace:*` inside `shared`), so apps never get a
+  second copy. A second React makes every hook throw "Invalid hook call".
+- ESM only (`dist/index.mjs` + types). No dual CommonJS build.
+- Every user-facing auth string comes from `authCopy` keys (`"signIn.title"`). No inline
+  strings in screens.
+
+### Mirrored apps
+
+`web` and `mobile` use the same folder layout, file names, hook names and props contracts
+under `src/features/<feature>/`: `client/` (platform client and the actions injected into
+shared hooks), `hooks/` (platform glue such as `useAuthNavigation`), `forms/`,
+`components/`, `screens/`. Only the markup and platform glue differ.
+
+### Local dev loop
+
+- Apps depend on shared packages through `file:../shared/packages/<name>`. pnpm copies the
+  built `dist` and resolves peers from the app, so there is exactly one React and one Zod.
+  Never `link:`: the symlink pulls `shared`'s own React and Zod into the bundle (measured:
+  two Reacts in the mobile bundle).
+- After changing `shared`: `pnpm build` in `shared`, then `pnpm install` in each app to
+  re-sync the copy (under 150 ms).
+- CI and releases use published pinned versions once `shared` is on GitHub Packages.
 - `resolver`, `grammar` and `llm` live in `agent/src/core/`. The phone never resolves
   anything. They stay pure and fixture-testable there.
 - `decisions.md` and `flow.md` live in `engineering/` only, never inside an app repo,

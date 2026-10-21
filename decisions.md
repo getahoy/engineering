@@ -4,6 +4,28 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-22 — Shared is split by domain: auth and tokens leave lib
+
+`@getahoy/auth` holds headless auth (schemas, `authCopy`, provider error mapping, hooks
+taking `signIn`/`signUp`/`signOut`/`onSuccess` as injected deps). `@getahoy/tokens` holds
+plain design values. `lib` keeps only generic `ErrorCode`, `errorMessages`, `parseInput`.
+`ErrorCode` stays in `lib` because `auth → lib`; moving it to `auth` would invert that.
+No JSX in shared: React DOM and React Native elements cannot cross platforms, so each app
+writes its own markup against shared props contracts. No platform prop: a `platform`
+switch grows a branch per OS in every shared file, while an injected dependency adds a
+platform without editing shared at all.
+Rejected: one `lib` holding everything (no boundaries, every app pulls every concern).
+Reverse: merge the packages back; app imports are the only thing that changes.
+
+## 2026-10-22 — Shared packages reach apps as `file:` copies, never `link:`
+
+Measured on the mobile iOS bundle: `link:` shipped two Reacts (19.3.0 and 19.3.1) and two
+Zods, because the symlink resolves `shared`'s own `node_modules`. `file:` copies only
+`dist` and resolves peers from the app: one React, one Zod. A rebuild plus `pnpm install`
+re-syncs the copy in under 150 ms.
+Rejected: `link:` (duplicate React, "Invalid hook call"), yalc (unmaintained pre-release).
+Reverse: switch the dependency specifier; Metro and Next need dedupe aliases first.
+
 ## 2026-10-20 — Mobile component kit is React Native Reusables, copied in
 
 The deciding reason is copy-in: the component source lands in our repo, so it can be made

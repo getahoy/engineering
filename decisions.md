@@ -4,6 +4,14 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-22 — Shared is lib only; protocol, crypto and tokens removed
+
+Revises the entry below. `protocol` and `crypto` were empty stubs nothing imported.
+`tokens` is UI work, which is not started, so each app keeps its own theme CSS
+(`web/src/app/globals.css`, `mobile/src/global.css`).
+Rejected: keeping stubs and a token pipeline ahead of the features that need them.
+Reverse: recreate each package with its feature (protocol in 3, crypto in 5, tokens with UI).
+
 ## 2026-10-22 — Shared shrinks to protocol, crypto, tokens, lib; auth returns to the apps
 
 Reverses the auth half of "Shared is split by domain" (below). Auth changes daily, so a

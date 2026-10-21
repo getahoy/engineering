@@ -13,7 +13,7 @@ quietly.
   CLAUDE.md     symlink → engineering/CLAUDE.md, loaded by every session in any repo below
   engineering/  private repo    CLAUDE.md (canonical), decisions.md, flow.md
   docs/         getahoy/docs    the spec
-  shared/     getahoy/shared   @getahoy/protocol, crypto, lib, tokens → GitHub Packages
+  shared/     getahoy/shared   @getahoy/lib → GitHub Packages
   mobile/     getahoy/mobile   Expo / React Native, iOS + Android
   agent/      getahoy/agent    Electron + the Swift helper
   web/        getahoy/web      Next.js site, Better Auth, API
@@ -29,13 +29,11 @@ quietly.
 
 | Package | Why it is shared | May depend on |
 |---|---|---|
-| `protocol` | phone and agent must agree on messages or the product breaks | nothing |
-| `crypto` | both sides must derive the same key or pairing fails | nothing |
-| `tokens` | both apps must look the same | nothing |
-| `lib` | `ErrorCode`, `errorMessages`, `parseInput` only; small and stable | `protocol` |
+| `lib` | `ErrorCode`, `errorMessages`, `parseInput` only; small and stable | nothing |
 
-- The graph is enforced in CI by `pnpm check:graph` in `shared`: no cycles, no edge
-  outside this table.
+`protocol` (messages) and `crypto` (key derivation) are created with the features that
+need them. Tokens stay in each app's own CSS until UI work starts.
+
 - App-specific code stays in the app even when the other app has a copy (auth today:
   `web` and `mobile` each own `features/auth`).
 - **No rendering in shared.** No JSX in any shared package. Each platform writes its own
@@ -49,9 +47,6 @@ quietly.
 - ESM only (`dist/index.mjs` + types). No dual CommonJS build.
 - Every user-facing auth string comes from the app's `authCopy` keys (`"signIn.title"`).
   No inline strings in screens.
-- Tokens reach the apps as generated CSS: `web` imports `@getahoy/tokens/tailwind.css`,
-  `mobile` imports `@getahoy/tokens/uniwind.css`. No hand-written colour, radius or size
-  values in either app.
 
 ### Mirrored apps
 

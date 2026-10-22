@@ -263,6 +263,12 @@ Too large or repetitive for Edit means the file should be split, not scripted.
 - **Email verification (feature 2).** Until emails are verified, Better Auth will not link
   Google to an existing password account (`account_not_linked`). Verification makes linking
   automatic; never relax `requireLocalEmailVerified` instead.
+- **Password reset (feature 2).** No way back in after a forgotten password. Uses the same
+  email provider as verification (the `email_message` tables already exist).
+- **Apple sign-in (before App Store submission).** Apple requires it when Google sign-in is
+  offered. Native Sign in with Apple on iOS; needs an Apple Developer Services ID and key.
+- **Account deletion (before App Store submission).** Apple requires in-app deletion when
+  sign-up happens in the app.
 
 **Everything is real.** No mocks of our own apps, no fake agent, no stub to replace later.
 If a feature needs phone and Mac, build both halves in it. Empty and correct beats full and

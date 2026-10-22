@@ -28,14 +28,15 @@ quietly.
 
 | Package | Why it is shared | May depend on |
 |---|---|---|
-| `lib` | `ErrorCode`, `errorMessages`, `parseInput`, `APP_SCHEME` (web trusts `ahoy://`, mobile registers it), and `src/auth/`: `authCopy`, credentials schemas with `MINIMUM_PASSWORD_LENGTH` and `MAXIMUM_PASSWORD_LENGTH` (Better Auth enforces both on the server), `authErrorMessage`, `socialErrorMessage`, `socialProviderCatalog`, `useAuthRequest`, `useCredentialsForm`; peers `react` and `zod` | nothing |
+| `lib` | `ErrorCode`, `errorMessages`, `parseInput`, `APP_SCHEME` (web trusts `ahoy://`, mobile registers it), and `src/auth/`: `authCopy`, credentials schemas with `MINIMUM_PASSWORD_LENGTH` and `MAXIMUM_PASSWORD_LENGTH` (Better Auth enforces both on the server), `authErrorMessage`, `socialErrorMessage`, `socialProviderCatalog`, `credentialFields` (name, label, autocomplete; apps add platform input props), `useAuthRequest`, `useCredentialsForm`; peers `react` and `zod` | nothing |
 
 `protocol` (messages, and the Bonjour type `_ahoy._tcp` at feature 3) and `crypto` (key
 derivation) are created with the features that need them. Tokens stay in each app's own
 CSS until UI work starts.
 
-- Code that touches a platform stays in the app: the auth client, navigation, fields,
-  screens, components, and hooks that call the client (`useSignOut`, `useSocialSignIn`).
+- Code that touches a platform stays in the app: the auth client, navigation, platform
+  input props, screens, components, and hooks that call the client (`useSignOut`,
+  `useSocialSignIn`).
 - **No rendering in shared.** No JSX in any shared package. Each platform writes its own
   markup against the same props contract and the same hooks.
 - **No platform prop and no platform branching in shared.** Shared code varies only on an

@@ -93,6 +93,9 @@ these rules (`!`, comments).
 
 ## Git flow
 
+**Ask the user before every commit, in every repo.** Show what will be committed and wait
+for a yes. Approval for one commit does not cover the next.
+
 Never push to `main`. Not after a rebase, not for a one-line fix, not because the change is
 obviously safe.
 

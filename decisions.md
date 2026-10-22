@@ -4,6 +4,31 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-23 — Helper protocol lives in the agent; capture returns a file path
+
+Only the agent and the Swift helper speak it, so the Zod schemas sit in
+`agent/src/core/helper/`, not `@getahoy/protocol` (created at feature 5 for phone to Mac).
+Element refs are opaque and valid until the next snapshot. `capture` writes a PNG to the temp
+directory and returns its path instead of streaming base64 over stdout.
+Rejected: helper schemas in shared (no second speaker), base64 frames (megabytes per line).
+Reverse: move the schemas to `@getahoy/protocol` if the phone ever talks to the helper.
+
+## 2026-10-23 — Sparse tree retry triggers below 10 elements
+
+A Chromium window with accessibility off exposes only its chrome (window, group, three
+traffic-light buttons, measured on VS Code), which slipped past a threshold of 5. Below 10
+the helper sets `AXManualAccessibility`, waits 300 ms and walks again.
+Rejected: always setting the flag (an extra 300 ms on every native app).
+Reverse: change `sparseTreeThreshold` in `snapshot.swift`.
+
+## 2026-10-23 — Agent is Electron Forge with Vite and TypeScript, not Next.js
+
+The agent UI is a tray popover, settings and overlays; there is nothing to route or render on
+a server. Next inside Electron means either a static export that drops every server feature
+or a local Next server that slows launch and opens a port.
+Rejected: Next static export, Next server in the main process, Nextron.
+Reverse: swap the renderer for a Next static export loaded over a custom `app://` protocol.
+
 ## 2026-10-22 — App scheme and password maximum live in `@getahoy/lib`
 
 `APP_SCHEME` feeds the server's `trustedOrigins` and the phone's registered scheme

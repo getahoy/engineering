@@ -10,7 +10,8 @@ boundary.
 | web | `src/app/**/page.tsx`, `src/app/api/auth/[...all]/route.ts` | Next.js pages, Better Auth API |
 | web | `src/proxy.ts` | Session check before `/sign-in`, `/sign-up`, `/account` render |
 | mobile | `src/app/_layout.tsx` | Expo Router stack, session guards |
-| agent | `src/main.ts` | Electron main process (feature 4 builds the shell) |
+| agent | `src/main.ts` | Electron main process, composition root |
+| agent | `src/renderer/main.tsx` | Main window React app |
 | agent | `src/dev/helperConsole.ts` (`pnpm helper`) | Dev console driving the Swift helper |
 | helper | `native/macos-helper/Sources/ahoyHelper/main.swift` | Swift process reading JSON lines on stdin |
 
@@ -36,6 +37,19 @@ boundary.
   `/account`, or `/sign-in?error=<code>` → `socialSignInError.tsx` → `socialErrorMessage`
 - mobile: `useSocialSignIn` → expo client opens `expo-web-browser` sheet ║ Google ║ web callback
   ║ `ahoy://` back into the app → session or the generic `error.social` message
+
+## Agent startup
+
+1. `main.ts`: single-instance lock, hide the Dock, read `settings.json` (`shell/settingsStore.ts`)
+2. Build `MacosPlatform`, `AgentController`, `HelperClient`, `MainWindow`, `AgentTray`;
+   `shell/bridgeIpc.ts` registers the IPC handlers
+3. `HelperClient.start()` ║ spawn ║ `ahoyHelper` (debug build in dev,
+   `Contents/Resources/ahoyHelper` when packaged); `ready` and `exited` update the controller
+4. Permission polling every 2 s (`systemPreferences`) and `powerMonitor` lock events update the
+   controller, which re-renders the tray menu and pushes state to the window
+5. Onboarding not done → `MainWindow.show()` (Dock shown, focus stolen) ║ IPC ║ `preload.ts`
+   bridge ║ `renderer/agentApp.tsx` picks welcome, permissions or pair from `state.screen`
+6. A button press ║ IPC ║ `AgentController.completeStep` → writes `settings.json` → new state
 
 ## Helper command (agent)
 

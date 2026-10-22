@@ -4,6 +4,14 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-23 — Agent window is React with Tailwind tokens; menubar is a native menu
+
+The window renders three onboarding screens from one `AgentState` pushed over IPC and
+Zod-parsed in the preload. Tokens live in `src/renderer/tokens.css`. The menubar uses a native
+tray menu (status lines, Open, Quit) until it needs live content, then becomes a popover.
+Rejected: shadcn in the agent (no vite config for its CLI to detect), a popover window now.
+Reverse: swap `AgentTray` for a popover `BrowserWindow` anchored to the tray bounds.
+
 ## 2026-10-23 — Helper protocol lives in the agent; capture returns a file path
 
 Only the agent and the Swift helper speak it, so the Zod schemas sit in

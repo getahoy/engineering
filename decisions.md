@@ -4,6 +4,45 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-24 — Pairing is Better Auth device authorization plus our proof; reverses courier-lan first (spec Part 16.3)
+
+The Mac asks Better Auth's `deviceAuthorization` plugin (RFC 8628) for a code, the phone
+claims it (our route approves it), the Mac polls and receives a Better Auth session via the
+`bearer` plugin. Works with the phone on mobile data. The QR's one-time secret never reaches
+web: the phone proves it scanned the QR with keyed BLAKE2b over both public keys, stored in
+`pairing_claims`, and the Mac checks it, so a lying server cannot pair a stranger.
+Rejected: courier-lan (fails off Wi-Fi), our own code/poll/token tables (security code the
+auth library already maintains), Redis for codes.
+Reverse: add courier-lan as a second strategy; the QR already carries `lan`.
+
+## 2026-10-24 — Noise IK over a WebSocket on the LAN, pure-JS libsodium
+
+`noise-handshake` with `sodium-javascript` on both sides: Metro takes it through the
+`browser` field, Vite through an alias, so no native addon ships. Fresh ephemeral keys per
+connection give forward secrecy and replay safety without counters or clocks. The protocol
+version rides in the encrypted hello, so a mismatch gets a readable refusal.
+Rejected: XX (the phone already knows the Mac key), sodium-native (Electron rebuilds),
+TLS with self-signed certs.
+Reverse: swap the pattern inside `@getahoy/crypto/secureChannel.ts`.
+
+## 2026-10-24 — Error status comes from the error code
+
+`ErrorResponse(code, message, field?)` maps the code to the HTTP status through one
+exhaustive record, so a route cannot pair `not_found` with 400. `field` names the invalid
+input path (Stripe's `param`). `request()` reads `x-request-id` into its typed error.
+Rejected: a status argument per call (drifts), RFC 9457 problem+json (more fields than needed).
+Reverse: add an optional status override to `ErrorResponse`.
+
+## 2026-10-24 — The Mac's credential is a Better Auth session
+
+The device-code poll returns a normal session token, kept in `identity.bin` (`safeStorage`)
+and sent as `Authorization: Bearer`. Revoking it is revoking a session; no token table of
+ours. It expires like any session (7 days, refreshed on use), so the relay in 5b must keep
+it fresh. Claims are written before approval, so the Mac never polls a token whose claim is
+missing; a refused approval deletes its claim, stale claims are swept on insert.
+Rejected: our own hashed device token (a second credential system), JWTs (not revocable).
+Reverse: issue a dedicated device token in `completePairing` and store its hash.
+
 ## 2026-10-23 — Agent window is React with Tailwind tokens; menubar is a native menu
 
 The window renders three onboarding screens from one `AgentState` pushed over IPC and

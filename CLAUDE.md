@@ -28,11 +28,12 @@ quietly.
 
 | Package | Why it is shared | May depend on |
 |---|---|---|
-| `lib` | `ErrorCode`, `errorMessages`, `parseInput`, `APP_SCHEME` (web trusts `ahoy://`, mobile registers it), and `src/auth/`: `authCopy`, credentials schemas with `MINIMUM_PASSWORD_LENGTH` and `MAXIMUM_PASSWORD_LENGTH` (Better Auth enforces both on the server), `authErrorMessage`, `socialErrorMessage`, `socialProviderCatalog`, `credentialFields` (name, label, autocomplete; apps add platform input props), `useAuthRequest`, `useCredentialsForm`; peers `react` and `zod` | nothing |
+| `lib` | `ErrorCode`, `errorMessages`, `parseInput`, `APP_SCHEME` (web trusts `ahoy://`, mobile registers it), and `src/auth/`: `authCopy`, credentials schemas with `MINIMUM_PASSWORD_LENGTH` and `MAXIMUM_PASSWORD_LENGTH` (Better Auth enforces both on the server), `authErrorMessage`, `socialErrorMessage`, `socialProviderCatalog`, `credentialFields` (name, label, autocomplete; apps add platform input props), `useAuthRequest`, `useCredentialsForm`; `src/api/`: envelope schemas, `SuccessResponse`, `ErrorResponse`, `request()`, `requestErrorMessage`, `REQUEST_ID_HEADER`; `src/logging/`: `createLogger(requestId?)`, redacting before it writes to the console; peers `react` and `zod` | nothing |
+| `protocol` | `PROTOCOL_VERSION`, `PLATFORMS`, device description, pairing QR, pairing API request/response schemas, handshake hello/reply and transport frames. Phone, Mac and web all speak it; peer `zod` | nothing |
+| `crypto` | Device key pairs, base64url (`@scure/base`), pairing proof (keyed BLAKE2b), Noise IK initiator/responder with a sealed channel. Phone and Mac must agree byte for byte; depends on `noise-handshake` + `sodium-universal` + `sodium-javascript` (apps alias `sodium-native` to `sodium-javascript`) | nothing |
 
-`protocol` (messages, and the Bonjour type `_ahoy._tcp` at feature 3) and `crypto` (key
-derivation) are created with the features that need them. Tokens stay in each app's own
-CSS until UI work starts.
+The Bonjour type `_ahoy._tcp` joins `protocol` when discovery is built. Tokens stay in each
+app's own CSS until UI work starts.
 
 - Code that touches a platform stays in the app: the auth client, navigation, platform
   input props, screens, components, and hooks that call the client (`useSignOut`,
@@ -240,7 +241,7 @@ Too large or repetitive for Edit means the file should be split, not scripted.
 | 2 | Auth | Sign up and log in on web and phone (email, Google, Apple), sessions persist |
 | 3 | Swift helper | Snapshot, click, key, type, capture over stdio |
 | 4 | Mac agent shell | Installs, menubar, spawns and talks to the helper |
-| 5 | Pairing | Scan QR, phone and Mac connected and encrypted, protocol version checked. `courier-lan` only |
+| 5 | Pairing | Scan QR, phone and Mac connected and encrypted, protocol version checked. 5a: server pairing + LAN connection. 5b: relay with Redis presence, auto switch Wi-Fi ⇄ relay |
 | 6 | Talk + speech | Hold, speak, the Mac shows what you said |
 | 7 | Matching | "Scroll down" and "click Save" work. Numbered overlay |
 | 8 | Devices screen | Real paired devices, rename, revoke |
@@ -353,7 +354,7 @@ architecture, and matching on message text breaks on a copy edit.
 
 ```ts
 type ApiSuccess<T> = { success: true; data: T }
-type ApiError = { success: false; error: { code: ErrorCode; message: string } }
+type ApiError = { success: false; error: { code: ErrorCode; message: string; field?: string } }
 type ApiResponse<T> = ApiSuccess<T> | ApiError
 ```
 
@@ -366,11 +367,15 @@ type ApiResponse<T> = ApiSuccess<T> | ApiError
 - **`miss` and `ambiguous` are not error codes.** They are normal command outcomes, carried
   in the command-result frame's outcome union, never in an `ApiError`.
 - Built only by `SuccessResponse(data, status = 200)` and
-  `ErrorResponse(code, message, status)` from `@getahoy/lib`. Never `NextResponse.json` /
-  `res.json` directly in a route.
-- Status: `201` creates, `400` `invalid_input`, `401` `unauthorized`, `403` `forbidden` /
-  `device_revoked`, `404` `not_found`, `409` `conflict`, `426` `protocol_version_mismatch`,
-  `429` `rate_limited`, `500` `internal`.
+  `ErrorResponse(code, message, field?)` from `@getahoy/lib`. Never `NextResponse.json` /
+  `res.json` directly in a route. `field` is the invalid input path, for forms.
+- Status comes from the code, never passed: `201` creates (`SuccessResponse(data, 201)`),
+  `400` `invalid_input`, `401` `unauthorized`, `403` `forbidden` / `device_revoked` /
+  `blocked`, `404` `not_found`, `409` `conflict`, `426` `protocol_version_mismatch`,
+  `429` `rate_limited`, `500` `internal` / `broken`, `503` `transient`.
+- Every route is wrapped by web's `apiRoute(scope, work)`: request id in
+  `AsyncLocalStorage`, `x-request-id` on the response, one access log line, the one outer
+  catch.
 - The envelope Zod schema lives in `@getahoy/lib` and both sides use it. The server builds
   it; the client parses it.
 
@@ -378,14 +383,15 @@ type ApiResponse<T> = ApiSuccess<T> | ApiError
 
 Every route handler follows this order:
 
-1. Authenticate. Missing/invalid → `ErrorResponse("unauthorized", "Unauthorized", 401)`.
-2. Parse input with the route's schema using `safeParse`. Failure →
-   `ErrorResponse("invalid_input", firstIssueMessage, 400)`. Never `.parse()` + catch
-   `ZodError`.
+1. Authenticate. Missing/invalid → `ErrorResponse("unauthorized", message)`.
+2. Parse input with `readJson(request, schema)` (`safeParse` inside). Failure →
+   `invalidInputResponse(parsed)`: first issue message plus its field. Never `.parse()` +
+   catch `ZodError`.
 3. Do the work. Expected failures are return values mapped to an `ErrorResponse`.
 4. `SuccessResponse(payload)`.
-5. One outer `try/catch` only for bugs: log through the redacting logger, return
-   `ErrorResponse("internal", "Internal server error", 500)`. Never leak an internal message.
+5. Bugs are caught once, in `apiRoute`: logged with the stack through the redacting logger,
+   answered `ErrorResponse("internal", "Internal server error")`. Never leak an internal
+   message.
 
 ### Client side
 
@@ -419,7 +425,8 @@ Server:
   for serverless reuse — zyraa's `db.ts` pattern). Nothing else opens connections.
 - Schema changes are expand → backfill → dual-write → switch reads → contract. Never rename
   or drop in the same deploy as the code that needs it.
-- **No Redis yet.** Upstash arrives only with the `server-rendezvous` enrollment strategy.
+- **No Redis yet.** Upstash arrives with the relay (feature 5b) for presence and routing.
+  Device codes live in Postgres (`device_code`, Better Auth, 5 min expiry).
 
 Mac agent — **not a database. No SQLite, no embedded DB, ever.**
 
@@ -513,10 +520,18 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 - Every strategy produces two things from two places: the **session key**, derived on both
   devices and never sent to a server, and **identity** (account link + the Mac's tokens),
   issued only by `web`.
-- Feature 5 builds **only `courier-lan`**: Mac shows QR (address + public key) → phone
-  connects over LAN, key exchange, encrypted socket → phone asks `web` to link that public
-  key and issue its tokens → phone hands tokens to the Mac over the encrypted socket.
-  `server-rendezvous` and `device-code` are not built until asked for.
+- Feature 5 builds **server pairing** on Better Auth's `deviceAuthorization` plugin, working
+  on any network: Mac requests a device code (client `ahoy-desktop`) → Mac shows QR (key,
+  name, user code, one-time secret, LAN addresses, expiry) → signed-in phone claims the code
+  with a proof (keyed BLAKE2b of both public keys under the QR secret); web records the claim
+  and approves the code → the Mac's poll returns a Better Auth session (`bearer`) → Mac calls
+  `/api/pairing/complete`, which links both devices in one transaction and returns the
+  phone and proof, which the Mac checks before trusting the phone. The QR secret never
+  reaches web. Never hand-roll codes, polling or device tokens: extend the plugin instead.
+  `courier-lan` and a browser approval page are not built until asked for.
+- The enrollment chain has one entry today and is a plain function on each side
+  (`claimScannedCode`, `PairingSession`). The `EnrollmentStrategy` interface arrives with
+  the second strategy.
 - Pairing direction: the Mac shows the QR, the signed-in phone approves. Never the reverse.
 - QR payload is versioned and additive: never remove a field, never change a field's
   meaning, bump `v` for a breaking change. Unknown fields are ignored. It is a Zod schema
@@ -571,7 +586,10 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 - The redaction layer is built before the first log line. Logs go through it, never
   `console.*` directly.
 - Logger call shape: `logger.info(scope, message)` / `logger.error(scope, message, error)`,
-  output `ISO-time [LEVEL] [requestId] [scope] message`.
+  output `ISO-time [LEVEL] [requestId] [scope] message`. One `createLogger` in
+  `@getahoy/lib` redacts emails, bearer tokens and long secrets and writes to the console;
+  an app passes its request id source and builds the logger once (web:
+  `features/logging/server/logger.ts`, agent: `main.ts`).
 - Per-command telemetry: id, durations per stage, snapshot level, resolver tier, candidate
   count, provider id, outcome. Nothing else.
 - No secrets in code or committed config. `.npmrc` may reference `${GITHUB_TOKEN}`; the
@@ -598,8 +616,8 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 - Every consuming repo's `.npmrc`: `@getahoy:registry=https://npm.pkg.github.com`.
 - `mobile/.npmrc` also has `node-linker=hoisted` from day one (Metro + symlinks).
 - Apps depend on pinned `@getahoy/*` versions, never ranges.
-- When bumping `better-auth` or `@better-auth/expo`, bump both `web` and `mobile` in the
-  same session.
+- When bumping `better-auth` or `@better-auth/expo`, bump `web`, `mobile` and `agent` (its
+  device-code client) in the same session, all pinned to the same version.
 
 ## Mobile specifics
 

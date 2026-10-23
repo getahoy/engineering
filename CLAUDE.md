@@ -268,6 +268,10 @@ Too large or repetitive for Edit means the file should be split, not scripted.
   offered. Native Sign in with Apple on iOS; needs an Apple Developer Services ID and key.
 - **Account deletion (before App Store submission).** Apple requires in-app deletion when
   sign-up happens in the app.
+- **Mac notarization (feature 4, before anyone else installs).** The agent is signed with an
+  Apple Development certificate, which keeps permissions stable across rebuilds on this Mac
+  but cannot be notarized. Needs a Developer ID Application certificate (Apple Developer
+  Program): switch `osxSign` to that identity, add notarization to `forge.config.mts`.
 
 **Everything is real.** No mocks of our own apps, no fake agent, no stub to replace later.
 If a feature needs phone and Mac, build both halves in it. Empty and correct beats full and

@@ -64,7 +64,8 @@ Only the markup and platform glue differ.
   Never `link:`: the symlink pulls `shared`'s own React and Zod into the bundle (measured:
   two Reacts in the mobile bundle).
 - After changing `shared`: `pnpm build` in `shared`, then `pnpm install` in each app to
-  re-sync the copy (under 150 ms).
+  re-sync the copy (under 150 ms). Restart the `web` dev server afterwards: Turbopack can
+  keep serving route modules compiled against the old copy (measured twice in feature 5).
 - CI and releases use published pinned versions once `shared` is on GitHub Packages.
 - `resolver`, `grammar` and `llm` live in `agent/src/core/`. The phone never resolves
   anything. They stay pure there.
@@ -499,6 +500,11 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
    a screen.
 6. Every command has a unique ID; the agent ignores repeats.
 7. Transport is an interface with an ordered list of implementations (one today).
+8. A dropped socket or timeout never ends a pairing. Only an authenticated `not_paired`
+   refusal, a `goodbye` with an end reason, or a revoked server link does. Every ending
+   carries its reason to the other device.
+9. A Mac has one phone; a phone can hold several Macs. Pairing a new phone revokes the old
+   link only when the new pairing completes.
 
 - Protocol version is exchanged first in the handshake. Incompatible → refuse with "Update
   your Mac app to connect" (or phone equivalent). Never proceed.

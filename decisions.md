@@ -4,6 +4,24 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-25 — Pairing ends are explicit: goodbye frames, signed refusals, server links
+
+Every ending carries a reason: `goodbye` frames on the live socket (fast), a revoked
+`device_links` row with `revoke_reason` (reliable), and Mac tombstones that answer a removed
+phone with a Noise-authenticated `not_paired`. A timeout or closed socket never ends a
+pairing. Outboxes on both devices retry unlinks until done or `not_found`.
+Rejected: treating a closed socket as removal (false "no longer trusts" on Wi-Fi blips),
+server-only checks (slow), LAN-only messages (lost when offline).
+Reverse: drop tombstones and the links check; endings fall back to unreachable.
+
+## 2026-10-25 — A Mac has one phone, a phone has many Macs
+
+Pairing a new phone revokes the old link as `replaced` inside the complete transaction, so
+the old phone keeps working until the new one is in. Fewer states than many phones per Mac
+and it matches "my phone controls my Mac". Changes the corner-case row that allowed several.
+Rejected: several phones per Mac (who is active, concurrent commands, more UI states).
+Reverse: remove `replacePreviousPhones` and let the Mac hold a list again.
+
 ## 2026-10-24 — Pairing is Better Auth device authorization plus our proof; reverses courier-lan first (spec Part 16.3)
 
 The Mac asks Better Auth's `deviceAuthorization` plugin (RFC 8628) for a code, the phone

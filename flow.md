@@ -88,15 +88,33 @@ boundary.
 ## Phone connects to Mac (LAN)
 
 1. Agent `PhoneLink` → `LanListener` binds 127.0.0.1 + each private LAN IPv4 on 7421,
-   re-syncing addresses every 5 s; tray "Ahoy On" off closes every socket
-2. Phone `PairedMacItem` → `useMacConnection` → `connectToMac` → `lanTransport` races the
-   saved addresses ║ WebSocket on Wi-Fi ║ `WebSocketFrameStream` (ping every 15 s)
-3. Noise IK message 1 carries the phone hello ║ agent `PhoneSession` →
-   `acceptHandshake`: unknown phone key → closed before parsing; other protocol version →
-   `refused`; else `welcome` with the Mac hello
-4. Phone sends an encrypted `ready` frame; only then does the Mac count it connected and the
-   tray icon turns to `iphone.radiowaves.left.and.right`
-5. Socket close → phone shows Wi-Fi vs mobile data (`expo-network`), Mac drops the phone
+   re-syncing addresses every 5 s, at most 20 handshakes per minute per address
+2. Phone `LiveMacCard` → `useMacConnection` → `MacConnection` → `connectToMac` →
+   `lanTransport` races the saved addresses ║ WebSocket on Wi-Fi ║ `WebSocketFrameStream`
+3. Noise IK message 1 carries the phone hello ║ agent `PhoneSession` → `acceptHandshake`:
+   undecryptable → plaintext `unknown_mac_key`; unknown key → signed `not_paired` with the
+   tombstone reason or `unknown` (payload never parsed); other version → `version_mismatch`;
+   else `welcome`
+4. Phone sends an encrypted `ready`; the Mac counts it connected, sends `status { locked }`
+   and repeats it on every lock change
+5. Timeout or close before a reply → phone `unreachable`, auto-retry every 5 s in the
+   foreground. Only a signed refusal marks the stored Mac `ended`
+
+## Pairing ends (either side)
+
+1. Remove / sign out / pair a new phone: the acting side sends `goodbye { reason }` on the
+   live socket, then queues the unlink in its outbox (`identity.bin` on the Mac,
+   `pendingUnlinks` in SecureStore on the phone) ║ HTTP ║ `/api/pairing/unlink` revokes the
+   `device_links` row with `revoked_by` + `revoke_reason`; a new phone is revoked inside
+   `completePairing` as `replaced`
+2. The other side, if connected, handles the goodbye at once: Mac `phoneEnded.ts` (banner,
+   one notification, tombstone); phone `MacConnection` (stored `ended`, ended card)
+3. If it was offline: Mac `LinkMonitor` (start, every 15 min, on wake) and phone
+   `useLinkSync` (start, foreground) read `/api/pairing/links` and treat a revoked link like
+   the goodbye. A later handshake gets the signed `not_paired` from the Mac's tombstone
+4. Pause: phone `goodbye paused` + stored `paused`; Mac shows "paused". Ahoy off, quit and
+   sleep send `turned_off`, `quitting`, `sleeping`; the phone keeps that reason while it
+   retries
 
 ## Helper command (agent)
 

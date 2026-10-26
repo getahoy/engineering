@@ -564,6 +564,12 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   hardcoded visual value in any component.
 - Containers own state and data; presentational components take typed props only.
 - Every screen ships loading, empty, error and offline states plus accessibility labels.
+- An action this device decides alone updates the screen at once to its final state. An
+  action that needs the other side shows a waiting state, then the real result.
+- One action is one forward screen change. Never pass through an intermediate state on the
+  way (no "Not connected" flash before the QR).
+- No spinner for work under 300 ms. A spinner, once shown, stays at least 500 ms.
+- A button is disabled while its action runs.
 - **`web` uses shadcn** (base-nova preset, Base UI). Its CSS variables in
   `src/app/globals.css` are the tokens file. Use token classes (`bg-background`,
   `text-muted-foreground`, `text-destructive`, …), never raw palette colours like

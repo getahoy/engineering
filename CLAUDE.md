@@ -143,7 +143,8 @@ fix/pairing-reconnect-after-sleep
   components → screens/pages. Files that are used together go in the same commit (an env
   variable lands with the code that first reads it). Never one giant commit, never one
   commit per file.
-- Prefix: `feat` / `fix` / `chore` / `refactor` / `docs`.
+- Prefix: `feat` / `fix` / `chore` / `refactor` / `docs` / `test`. `test` only for commits
+  that add or change `*.test.ts` files.
 - Subject lowercase, imperative, no trailing period, 72 characters max.
 - Body is short bullets. No paragraphs.
 - No apostrophes or quotes anywhere in the message.
@@ -242,8 +243,8 @@ Too large or repetitive for Edit means the file should be split, not scripted.
 | 2 | Auth | Sign up and log in on web and phone (email, Google, Apple), sessions persist |
 | 3 | Swift helper | Snapshot, click, key, type, capture over stdio |
 | 4 | Mac agent shell | Installs, menubar, spawns and talks to the helper |
-| 5 | Pairing | Scan QR, phone and Mac connected and encrypted, protocol version checked. 5a: server pairing + LAN connection. 5b: relay with Redis presence, auto switch Wi-Fi ⇄ relay |
-| 6 | Talk + speech | Hold, speak, the Mac shows what you said |
+| 5 | Pairing | Scan QR, phone and Mac connected and encrypted, protocol version checked. 5a: server pairing + LAN connection. Hosted realtime channel (Ably or Pusher) added alongside the LAN link after 31 Oct. 5b Bonjour skipped. |
+| 6 | Talk + speech | Saying "open Chrome" on the phone opens Chrome on the Mac, and the phone shows the result |
 | 7 | Matching | "Scroll down" and "click Save" work. Numbered overlay |
 | 8 | Devices screen | Real paired devices, rename, revoke |
 | 9 | Dashboard + profile | Real command history |
@@ -426,8 +427,9 @@ Server:
   for serverless reuse — zyraa's `db.ts` pattern). Nothing else opens connections.
 - Schema changes are expand → backfill → dual-write → switch reads → contract. Never rename
   or drop in the same deploy as the code that needs it.
-- **No Redis yet.** Upstash arrives with the relay (feature 5b) for presence and routing.
-  Device codes live in Postgres (`device_code`, Better Auth, 5 min expiry).
+- **No Redis.** Hosted realtime channel (Ably or Pusher) added alongside the LAN link after
+  31 Oct. 5b Bonjour skipped. Device codes live in Postgres (`device_code`, Better Auth,
+  5 min expiry).
 
 Mac agent — **not a database. No SQLite, no embedded DB, ever.**
 
@@ -437,8 +439,11 @@ Mac agent — **not a database. No SQLite, no embedded DB, ever.**
 | Auth tokens, session key, paired peers | Encrypted with Electron `safeStorage` (it encrypts; the key lives in Keychain; we write the blob to a file ourselves) |
 | Undo ring, last snapshot, command queue, active session | Memory only. Never persisted, cleared on lock |
 
-Phone — **not a database either.** MMKV for cache, `expo-secure-store` for keys and tokens.
-Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boundary.
+Phone — **not a database either.** SecureStore holds secrets and pairing state (device
+keys, session, paired Macs, unlink outbox); MMKV holds settings, flags and cache. MMKV
+reads are synchronous, so a screen renders the right mode on its first frame. MMKV is
+reached only through small typed modules with a Zod schema and defaults, so a bad stored
+value falls back instead of crashing. Nothing secret in MMKV.
 
 ---
 
@@ -455,8 +460,9 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
 - Error kinds, each with one response: **Miss** → numbered overlay. **Ambiguous** → ask,
   never guess. **Blocked** → refuse and say why. **Transient** → retry once at the provider
   layer, then fall back. **Broken** → stop, show in tray, say what to fix.
-- Anything external sits behind a swappable port: LLM, speech, payments, transport,
-  platform. Vendor names appear only in the adapter folder and the composition root.
+- Anything external sits behind a swappable port: LLM, payments, transport, platform.
+  Vendor names appear only in the adapter folder and the composition root.
+- Speech goes through the Vercel AI SDK on the server; no speech port of our own.
 
 ## Layering (agent and mobile)
 
@@ -618,7 +624,7 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   one into `mobile` blindly. When ours is the RN equivalent of a DOM-only hook from
   either, keep their name so both codebases read the same, and put it in `shared`. Never
   add a third hooks library.
-- Vercel AI SDK may be used inside an adapter, never in place of a port.
+- Speech goes through the Vercel AI SDK on the server; no speech port of our own.
 
 ## Package manager: pnpm
 
@@ -668,8 +674,11 @@ Nothing secret in MMKV. Cached values are Zod-parsed on read like any other boun
   by hand: it would run twice. If a `babel.config.js` is ever needed for another reason,
   `react-native-worklets/plugin` goes last in `plugins`.
 
-## No tests
+## Tests: pure code only
 
-- No test files, test runners, fakes or fixtures in any repo.
-- Verify with typecheck, lint, builds and a manual run of the touched flow. A throwaway
-  script in the scratchpad is fine; it is never committed.
+- Tests exist only as `*.test.ts` files using `node:test`, next to the code they check, in
+  `shared/packages/protocol` and `agent/src/core`. Run with `node --test`; no runner
+  dependency, no fakes, no fixtures.
+- Nowhere else: no tests in `web`, `mobile`, `agent/src/shell` or the renderer.
+- Everything else is verified with typecheck, lint, builds and a manual run of the touched
+  flow. A throwaway script in the scratchpad is fine; it is never committed.

@@ -4,6 +4,34 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-27 — App-level commands run through fixed templates before screen matching
+
+"Open Safari", "quit Music" and similar run through a closed set of `open` / `osascript`
+templates on the Mac, tried before any screen matching. The text only fills a template slot
+(an installed app name), runs with `execFile` and never reaches a shell, so the "no shell
+verb" rule holds. Rejected: matching on-screen elements for app commands (slow, needs the app
+visible), model-written scripts (unsafe). Reverse: drop the template tier; commands go
+straight to matching.
+
+## 2026-10-27 — 5b Bonjour is skipped; the next transport is a hosted realtime channel
+
+Bonjour only fixes a changed IP on the same Wi-Fi. A hosted realtime channel (Ably or
+Pusher), added alongside the LAN link after 31 Oct, fixes that and off-Wi-Fi use too. It
+carries our Noise-encrypted frames unchanged, with server-issued tokens per active pairing,
+so the service never sees plaintext. Not built now. Rejected: Bonjour first, our own
+WebSocket relay with Redis presence (more to run). Reverse: add Bonjour discovery as a LAN
+address source.
+
+## 2026-10-27 — Voice: the phone records a file, our server transcribes, only text reaches the Mac
+
+The phone records an m4a file and posts it to `/api/transcribe`; web calls ElevenLabs
+through the Vercel AI SDK and returns text; the phone sends `command { commandId, text }`
+over the encrypted session. One place holds the key, the Mac never handles audio, and a
+command frame is tiny on any transport. The AI SDK is our provider abstraction. Reverses
+streaming audio to the Mac and the Transcriber/Speaker ports. Rejected: streaming PCM over
+Noise to the Mac (parked on `parked/custom-talk` in agent and mobile), speech on the Mac.
+Reverse: merge `parked/custom-talk`.
+
 ## 2026-10-25 — Pairing ends are explicit: goodbye frames, signed refusals, server links
 
 Every ending carries a reason: `goodbye` frames on the live socket (fast), a revoked

@@ -10,6 +10,7 @@ boundary.
 | web | `src/app/**/page.tsx`, `src/app/api/auth/[...all]/route.ts` | Next.js pages, Better Auth API |
 | web | `src/proxy.ts` | Session check before `/sign-in`, `/sign-up`, `/account` render |
 | web | `src/app/api/pairing/{claim,complete}/route.ts` | Pairing API, each wrapped by `features/api/server/apiRoute.ts`; device codes live under `/api/auth/device/*` (Better Auth) |
+| web | `src/app/api/transcribe/route.ts` | Speech to text for the phone's talk button |
 | mobile | `src/app/_layout.tsx` | Expo Router stack, session guards, `getRandomValues` polyfill |
 | mobile | `src/app/pair.tsx` | QR scanner and pairing claim |
 | agent | `src/main.ts` | Electron main process, composition root |
@@ -115,6 +116,30 @@ boundary.
 4. Pause: phone `goodbye paused` + stored `paused`; Mac shows "paused". Ahoy off, quit and
    sleep send `turned_off`, `quitting`, `sleeping`; the phone keeps that reason while it
    retries
+
+## Talk (mobile ⇄ web ⇄ agent)
+
+1. Hold the button: `pairing/screens/macsHomeScreen.tsx` → `talk/hooks/useTalk.ts` →
+   `talk/sending/talkFlow.ts` `press` → `talk/recorder/useFileRecorder.ts` (expo-audio, mono
+   AAC m4a, stops at 30 s). The target Mac comes from `talk/hooks/useTalkTarget.ts`, which
+   reads each card's state from `LiveMacLinks`
+2. Release: `talkFlow.ts` → `talk/client/transcribeApi.ts` (multipart with `expo/fetch`,
+   session cookie) ║ HTTPS ║ `app/api/transcribe/route.ts`: session, 20/min rate limit,
+   `features/speech/server/readAudio.ts` (2 MB cap) → `transcribeAudio.ts`
+   ║ HTTPS ║ ElevenLabs `scribe_v2` with keyterms → `{ text }` or `nothing_heard`
+3. The phone deletes the recording, then `talk/sending/sendCommand.ts` sends
+   `command { commandId, text }` on the `MacSession` ║ LAN, Noise ║ agent
+   `core/connection/phoneSession.ts` → `shell/commands/commandReceiver.ts`
+4. The receiver replies `command.received` at once, checks `core/commands/commandLog.ts`
+   (last 100 ids: a repeat gets its stored result), queues the command, shows "Heard" in
+   the window, refuses when the screen is locked
+5. `shell/commands/runCommandText.ts` → `core/commands/parseCommand.ts` with
+   `shell/commands/installedApps.ts` → `runIntent.ts`: `open -a`, `osascript` templates with
+   `on run argv`, or `open <url>` ║ macOS
+6. `command.result { status, message }` ║ LAN ║ the phone shows Heard "…" and the message.
+   No `command.received` in 5 s → "Can't reach"; no result 10 s after it → "No answer".
+   Try again resends the same `commandId`, or re-uploads the same file if transcription
+   failed
 
 ## Helper command (agent)
 

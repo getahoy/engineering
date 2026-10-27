@@ -462,7 +462,7 @@ value falls back instead of crashing. Nothing secret in MMKV.
   layer, then fall back. **Broken** → stop, show in tray, say what to fix.
 - Anything external sits behind a swappable port: LLM, payments, transport, platform.
   Vendor names appear only in the adapter folder and the composition root.
-- Speech goes through the Vercel AI SDK on the server; no speech port of our own.
+- Speech goes through the official ElevenLabs SDK in one server file; no port and no AI SDK.
 
 ## Layering (agent and mobile)
 
@@ -624,7 +624,7 @@ value falls back instead of crashing. Nothing secret in MMKV.
   one into `mobile` blindly. When ours is the RN equivalent of a DOM-only hook from
   either, keep their name so both codebases read the same, and put it in `shared`. Never
   add a third hooks library.
-- Speech goes through the Vercel AI SDK on the server; no speech port of our own.
+- Speech goes through the official ElevenLabs SDK in one server file; no port and no AI SDK.
 
 ## Package manager: pnpm
 

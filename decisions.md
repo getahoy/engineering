@@ -4,6 +4,14 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-27 — Speech uses the official ElevenLabs SDK, not the AI SDK; partly reverses the voice entry below
+
+`/api/transcribe` calls `speechToText.convert` from `@elevenlabs/elevenlabs-js` in one file
+(`features/speech/server/transcribeAudio.ts`), model `scribe_v2`, language auto-detected,
+with about 60 keyterms (command words and app names). The AI SDK's ElevenLabs provider only
+passes keyterms for realtime streaming, and short command words need the bias. Rejected: AI
+SDK without keyterms. Reverse: swap that one file for `transcribe` from `ai`.
+
 ## 2026-10-27 — App-level commands run through fixed templates before screen matching
 
 "Open Safari", "quit Music" and similar run through a closed set of `open` / `osascript`

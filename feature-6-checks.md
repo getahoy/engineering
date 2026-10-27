@@ -26,5 +26,10 @@ restart the web dev server, rebuild the phone app, `pnpm start` in agent.
 | 18 | Hold, drag your finger off the button while talking, let go off the button | Recording keeps going while held; letting go anywhere sends it |
 | 19 | VoiceOver on: focus the talk button, double-tap and hold, speak, let go | Records while held and sends on release |
 | 20 | Reduce Motion on (Settings → Accessibility → Motion), then hold | No pulsing rings or spin; a steady glow while listening |
+| 21 | Use the phone for more than 5 minutes, then talk (bug 3) | The command runs; web log shows `POST /api/transcribe 200`, never 500 |
+| 22 | Stop the web server's database access briefly, then talk (bug 4) | "Speech didn't work this time"; you stay signed in |
+| 23 | Sign out, sign in as a different account on the same phone (bug 5) | No Macs listed; the old Mac cannot be controlled |
+| 24 | Reload the app with a Mac paired and awake (bug 6) | The talk button is active as soon as the card says Connected |
+| 25 | "Hide VS Code" with VS Code open (bug 7) | VS Code hides; "Hid Visual Studio Code" |
 
 "Check your Mac" comes from the phone: 3 s after `command.received` with no result yet.

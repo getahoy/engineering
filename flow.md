@@ -11,6 +11,8 @@ boundary.
 | web | `src/proxy.ts` | Session check before `/sign-in`, `/sign-up`, `/account` render |
 | web | `src/app/api/pairing/{claim,complete}/route.ts` | Pairing API, each wrapped by `features/api/server/apiRoute.ts`; device codes live under `/api/auth/device/*` (Better Auth) |
 | web | `src/app/api/transcribe/route.ts` | Speech to text for the phone's talk button |
+| web | `src/app/api/interpret/route.ts` | Smart commands: text to up to 3 actions, called by the Mac |
+| web | `scripts/evalInterpret.ts` (`pnpm eval:interpret`) | Manual run of the cases in `scripts/interpretCases.ts` against the interpret route, checked automatically, with a pass/fail table |
 | mobile | `src/app/_layout.tsx` | Expo Router stack, session guards, `getRandomValues` polyfill |
 | mobile | `src/app/pair.tsx` | QR scanner and pairing claim |
 | agent | `src/main.ts` | Electron main process, composition root |
@@ -58,7 +60,9 @@ boundary.
 
 1. `apiRoute(scope, work)` gives the request a UUID in `AsyncLocalStorage`
    (`features/logging/server/logger.ts`), so every log line carries it
-2. Route: authenticate → `readJson(request, schema)` → work → `SuccessResponse` or
+2. Route: authenticate (`features/auth/server/readSession.ts`: Better Auth `getSession`,
+   retried once without the `session_data` cache cookie if that cookie is unreadable) →
+   `readJson(request, schema)` → work → `SuccessResponse` or
    `ErrorResponse(code, message, field?)` (`@getahoy/lib`, status derived from the code)
 3. A throw is a bug: logged with its stack, answered `internal` 500. The response gets
    `x-request-id` and one access line `POST 201 42ms`
@@ -133,11 +137,23 @@ boundary.
 4. The receiver replies `command.received` at once, checks `core/commands/commandLog.ts`
    (last 100 ids: a repeat gets its stored result), queues the command, shows "Heard" in
    the window, refuses when the screen is locked
-5. `shell/commands/runCommandText.ts` → `core/commands/parseCommand.ts` with
-   `shell/commands/installedApps.ts` → `runIntent.ts`: `open -a`, `osascript` templates with
-   `on run argv`, or `open <url>` ║ macOS
+5. `shell/commands/commandRunner.ts` → `core/commands/parseCommand.ts` (tab phrases first,
+   `parseTabCommand.ts`) with `shell/commands/installedApps.ts` → `runIntent.ts`: `open -a`,
+   `osaScript.ts` AppleScript templates with `on run argv`, or `open <url>` ║ macOS. Keys
+   and typing go through `helperIntents.ts` (`mod`/`alt` mapped to ⌘/⌥) ║ stdio ║ the
+   helper's `key` and `type` verbs. Tabs: `tabIntents.ts` picks the named, frontmost or
+   default browser → `browserScripts.ts` JXA lists tabs by index ║ Apple Events ║ the browser
+   → `core/commands/matchTabs.ts` → close or switch by index. Drafts:
+   `core/commands/draftUrl.ts` → `open mailto:` or Gmail compose, never sent
+5a. When the parser has no match or no such app: `shell/interpret/interpretApi.ts` (Mac session
+   bearer, 7 s) ║ HTTPS ║ `app/api/interpret/route.ts` → `features/interpret/server/interpret.ts`
+   (model from `models.ts`) ║ HTTPS ║ Anthropic → up to 3 actions →
+   `core/commands/validateActions.ts` (all or nothing; `shortcutRules.ts` denylist,
+   `emailRules.ts`, a draft only alone) → run in order, waiting in `frontApp.ts` until an
+   opened or switched app is in front before keys or typing. AI unreachable, timed out or
+   invalid → "Smart commands aren't working right now"; no actions → the parser's message
 6. `command.result { status, message }` ║ LAN ║ the phone shows Heard "…" and the message.
-   No `command.received` in 5 s → "Can't reach"; no result 10 s after it → "No answer".
+   No `command.received` in 5 s → "Can't reach"; no result 15 s after it → "No answer".
    Try again resends the same `commandId`, or re-uploads the same file if transcription
    failed
 

@@ -4,6 +4,76 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-28 — Email drafts carry AI-written text; they never send
+
+`draftEmail { to, subject, body, via }` lets the AI write the subject and body, unlike `type`,
+whose text must be what the person said. Allowed because the result is a draft the person
+reads and sends: Ahoy opens a `mailto:` URL or Gmail's compose page and stops. A draft must
+be the only action, so no Return or ⌘Return can follow it, and the letters of the address's
+local part must appear in what was said. Rejected: sending (one mistake reaches someone),
+verbatim-only bodies (useless for "about the hackathon credits"). Reverse: drop the action.
+
+## 2026-10-28 — Browser tabs through JXA by index; matching on the Mac, not in the script
+
+Tabs in Chrome, Brave, Edge, Arc and Safari are listed with one JXA script (title and URL by
+window and tab index, because Arc throws on `tabs()` but answers indexed access), matched in
+`core/commands/matchTabs.ts`, then closed or switched by index. The spoken match never enters
+a script. No browser named → the frontmost browser, else the default browser
+(`NSWorkspace URLForApplicationToOpenURL`). Several matches answer with the titles and do
+nothing until choices arrive in step 7. Rejected: matching inside AppleScript (the match would
+reach the script), screen reading (step 7). Reverse: drop `tabIntents.ts` and the two actions.
+
+## 2026-10-28 — Shortcuts: any key with a modifier, minus a denylist; supersedes the 25-key allowlist
+
+The AI's `keys` action is now `{ key, modifiers }` with semantic modifiers (`mod`, `shift`,
+`alt`, `control`) mapped to ⌘⇧⌥⌃ on the Mac, so it can use app shortcuts it knows (Notion ⌘P,
+⌘M, ⌃⌘F). Key names are exactly the Swift helper's table, so power and eject cannot be sent.
+The Mac refuses ⌘Q in every variant, ⌥⌘Esc, ⌘Delete in every variant, a letter without a
+modifier (that is typing), and Return unless the person said enter, send, submit or return.
+Rejected: keeping the allowlist (every new app shortcut a code change). Reverse: restore
+`KEY_COMBOS` in the protocol.
+
+## 2026-10-28 — Pairings belong to an account on the phone
+
+The phone stores the user id that owns its pairings. When a different user signs in, paired
+Macs, pending unlinks and device keys are wiped before any card connects, the same data the
+sign-out button clears. An automatic sign-out (session gone on the server) keeps the pairing,
+so the same user signing back in reconnects without re-pairing. The phone signs out on
+`unauthorized` only after `getSession()` confirms the session is gone with no error. Rejected:
+unpairing on every automatic sign-out (re-pairing after each expiry). Reverse: delete
+`pairingOwner.ts`.
+
+## 2026-10-28 — A garbled session cache cookie is retried without it, not answered 500
+
+`readSession` in web calls Better Auth's `getSession`; if it throws, it retries once without
+the `session_data` cache cookie, so the signed token alone decides. A database failure still
+throws and stays a 500. iOS had merged its own cookie jar into the phone's cookie header;
+the phone now sends `credentials: "omit"` like Better Auth's own Expo client. Rejected:
+mapping every `getSession` error to 401 (a database blip would sign the phone out).
+Reverse: call `auth.api.getSession` directly again.
+
+## 2026-10-28 — Smart commands send text to Anthropic by default; onboarding must say so
+
+Command text and installed app names go to Anthropic when the parser can't handle a command,
+with no setting for now. Onboarding must disclose both cloud hops before first use: ElevenLabs
+hears the voice, Anthropic reads the words. A "Smart commands" off-switch (parser only) comes
+in hardening. Rejected: asking for consent now (no onboarding screen yet). Reverse: gate the
+interpreter call on the setting.
+
+## 2026-10-28 — Slim LLM tier: the parser first, the AI only when it can't, the Mac validates
+
+`/api/interpret` turns a command the parser can't handle into at most 3 actions from a closed
+set (open, quit, hide, switch, search, openSite, keys from an allowlist, type). The Mac runs
+nothing unless every action passes: exact installed app names, plain site hosts, Return only
+when the person said enter / send / submit / return, typed text only if it appears in what they
+said. Model `claude-haiku-5-5` through `@ai-sdk/anthropic` (thinking off, low effort, 5 s, no
+retry, system prompt and app list cached). Models come only from the allowlist in
+`web/src/features/interpret/server/models.ts`, resolved through `createProviderRegistry`: a new
+model is one entry, a new provider one registry line, a per-user choice one function; the Mac
+never knows the model. No interpreter port: the AI SDK is the abstraction. Rejected: the AI
+first (slower and paid for commands the parser already knows), the AI Gateway (one more
+account for one provider). Reverse: route everything through `interpret()` or drop the tier.
+
 ## 2026-10-27 — Speech uses the official ElevenLabs SDK, not the AI SDK; partly reverses the voice entry below
 
 `/api/transcribe` calls `speechToText.convert` from `@elevenlabs/elevenlabs-js` in one file

@@ -677,8 +677,9 @@ value falls back instead of crashing. Nothing secret in MMKV.
 ## Tests: pure code only
 
 - Tests exist only as `*.test.ts` files using `node:test`, next to the code they check, in
-  `shared/packages/protocol` and `agent/src/core`. Run with `node --test`; no runner
-  dependency, no fakes, no fixtures.
-- Nowhere else: no tests in `web`, `mobile`, `agent/src/shell` or the renderer.
+  `shared/packages/protocol`, `agent/src/core`, and pure files in `mobile` (no React Native
+  or Expo imports). Run with `node --test`; no runner dependency, no fakes, no fixtures.
+- Nowhere else: no tests in `web`, `agent/src/shell`, the renderer, or any mobile file that
+  imports React Native or Expo.
 - Everything else is verified with typecheck, lint, builds and a manual run of the touched
   flow. A throwaway script in the scratchpad is fine; it is never committed.

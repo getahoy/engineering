@@ -23,4 +23,8 @@ restart the web dev server, rebuild the phone app, `pnpm start` in agent.
 | 16 | Type in TextEdit without saving, then "close TextEdit" | After 3 s the phone shows "Check your Mac"; then "Asked TextEdit to quit. It may be waiting for you to save." The save dialog stays on the Mac |
 | 17 | First "close Terminal", deny the Automation prompt | "Allow Ahoy to control Terminal in System Settings → Privacy & Security → Automation." |
 
+| 18 | Hold, drag your finger off the button while talking, let go off the button | Recording keeps going while held; letting go anywhere sends it |
+| 19 | VoiceOver on: focus the talk button, double-tap and hold, speak, let go | Records while held and sends on release |
+| 20 | Reduce Motion on (Settings → Accessibility → Motion), then hold | No pulsing rings or spin; a steady glow while listening |
+
 "Check your Mac" comes from the phone: 3 s after `command.received` with no result yet.

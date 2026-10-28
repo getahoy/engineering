@@ -16,4 +16,6 @@ Status is `open`, or `fixed in <repo> <commit>`.
 | 6 | 2026-10-28 | Reloaded the app | Talk button active when the card says Connected | Card said Connected, button said "Connect to your Mac to talk" | fixed in mobile 90fd959; check 6.24 |
 | 7 | 2026-10-28 | Said "hide VS Code" (found in review) | VS Code hides | Failed: its process is named Code, not Visual Studio Code | fixed in agent 1ca0114; check 6.25 |
 | 9 | 2026-10-28 | Said "open gmail in arc" | Gmail opens in Arc | Opened in Chrome: sites, searches and Gmail drafts used the default browser | fixed in agent, web, shared (browser field); check 7.19 |
-| 8 | 2026-10-28 | Held-out eval: "switch to the notion tab" sent straight to the AI | switchTab notion | closeTab notion. On the phone the Mac's parser catches this phrase first, so only other wordings reach the AI | open |
+| 8 | 2026-10-28 | Held-out eval: "switch to the notion tab" sent straight to the AI | switchTab notion | closeTab notion. On the phone the Mac's parser catches this phrase first, so only other wordings reach the AI | fixed in agent 294ce91 (a tab closes only when close was said); check 7.21 |
+| 10 | 2026-10-28 | Said "close the groq tab" with console.groq.com open | That tab closes | "No tab matching": speech heard a sound-alike, and only the front or default browser was searched | fixed in agent 294ce91; check 7.22 |
+| 11 | 2026-10-28 | Reloaded the phone app | Know which JavaScript is running | No way to tell an old bundle from a new one | fixed in mobile 4e7613f (dev build stamp); check 6.27 |

@@ -26,3 +26,5 @@ agent. `pnpm eval:interpret` in web should pass every case first.
 | 18 | "Email this to my boss" | Nothing opens; the parser's message |
 | 19 | Chrome is the default browser: "open gmail in Arc", then "search cats on Safari" (bug 9) | Gmail opens in Arc; the search opens in Safari; "Opened mail.google.com in Arc" |
 | 20 | "Open YouTube in Brave" with Brave not installed | Nothing opens; no other browser is used instead |
+| 21 | Say something like "go over to the Notion tab" (bug 8) | It switches to the tab or does nothing; it never closes it |
+| 22 | console.groq.com open in Arc, Chrome in front: "close the groq tab" (bug 10) | The Groq tab closes in Arc, even if speech heard "grok" |

@@ -31,6 +31,7 @@ restart the web dev server, rebuild the phone app, `pnpm start` in agent.
 | 23 | Sign out, sign in as a different account on the same phone (bug 5) | No Macs listed; the old Mac cannot be controlled |
 | 24 | Reload the app with a Mac paired and awake (bug 6) | The talk button is active as soon as the card says Connected |
 | 25 | "Hide VS Code" with VS Code open (bug 7) | VS Code hides; "Hid Visual Studio Code" |
+| 27 | Reload the phone app (bug 11) | Under the title: "Dev build <commit>, loaded <time>", the time of this reload |
 | 26 | Watch the card while the Mac connects (after Disconnect → Connect, or a Mac restart) | The card turns Connected and the talk button is active in the same instant; a locked Mac shows "is locked" on both |
 
 "Check your Mac" comes from the phone: 3 s after `command.received` with no result yet.

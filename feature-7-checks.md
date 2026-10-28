@@ -33,6 +33,11 @@ agent. `pnpm eval:interpret` in web should pass every case first.
 | 25 | Finder with a file selected, "click Delete" or "click Move to Trash" | Nothing is clicked yet; the phone asks "… can't be undone. Confirm on your phone." with Yes and Cancel; Yes clicks it once |
 | 26 | "Scroll down", "page up", "go to the top", "go to the bottom" in a long web page | Page Down, Page Up, ⌘↑, ⌘↓ |
 | 27 | "Click Xyzzy" where nothing looks like it | No badges; "I couldn't find Xyzzy." |
+| 36 | A live page (a ticking clock or a feed) with a Save button: "click Save" (bug 12) | Save is clicked, never "The screen changed" |
+| 37 | A button titled OK whose tooltip or description says delete (bug 13) | The phone asks to confirm before clicking |
+| 38 | A long list with Save visible at the top and another Save scrolled out of view: "click Save" (bug 14) | The visible Save is clicked, no numbers |
+| 39 | A page where the word Send appears as text next to a Send button: "click Send" (bug 15) | The button is clicked, no numbers (Send still asks to confirm) |
+| 40 | "Click the close button" or "click minimize button" on a window (bug 16) | The window's close or minimize button; choice labels read "Close button", never blank |
 | 35 | A dialog with Save and Save As: say "click sav" (or a near miss speech gives) | At most 9 badges, closest first: 1 on Save, 2 on Save As; "Can't find Sav. Pick a number on the screen." |
 | 28 | Badges showing, then switch to another app or window | Badges disappear at once; the phone sheet closes; a late tap answers "The screen changed, say it again." |
 | 29 | Badges showing, wait 20 s | Badges disappear and the sheet closes |

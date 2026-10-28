@@ -28,3 +28,15 @@ agent. `pnpm eval:interpret` in web should pass every case first.
 | 20 | "Open YouTube in Brave" with Brave not installed | Nothing opens; no other browser is used instead |
 | 21 | Say something like "go over to the Notion tab" (bug 8) | It switches to the tab or does nothing; it never closes it |
 | 22 | console.groq.com open in Arc, Chrome in front: "close the groq tab" (bug 10) | The Groq tab closes in Arc, even if speech heard "grok" |
+| 23 | TextEdit with an unsaved document, ⌘S open: "click Save" | Save is clicked; phone shows "Clicked Save" |
+| 24 | Two buttons with the same name on screen (e.g. two Reply buttons in a Gmail thread): "click Reply" | Numbered badges on both; the phone sheet shows 1 and 2; picking one clicks only that one |
+| 25 | Finder with a file selected, "click Delete" or "click Move to Trash" | Nothing is clicked yet; the phone asks "… can't be undone. Confirm on your phone." with Yes and Cancel; Yes clicks it once |
+| 26 | "Scroll down", "page up", "go to the top", "go to the bottom" in a long web page | Page Down, Page Up, ⌘↑, ⌘↓ |
+| 27 | "Click Xyzzy" where no such button exists | Numbered badges on the clickable elements; "Can't find Xyzzy. Pick a number on the screen." |
+| 28 | Badges showing, then switch to another app or window | Badges disappear at once; the phone sheet closes; a late tap answers "The screen changed, say it again." |
+| 29 | Badges showing, wait 20 s | Badges disappear and the sheet closes |
+| 30 | Ask for a click, then move the window before the click lands (within 100 ms is hard; drag during "Sending…") | "The screen changed, say it again."; nothing is clicked |
+| 31 | 1Password (or Keychain Access) in front: "click Unlock" or "press command c" | Refused: "Ahoy doesn't click or type in this app." |
+| 32 | Say a command that fails 5 times in a row (e.g. "click Xyzzy" then cancel) | The next command answers "Ahoy paused…" with a Resume button; tapping it brings Ahoy back |
+| 33 | "Hit the blue continue button" on a page with a Continue button | The AI turns it into a click; Continue is clicked |
+| 34 | Badges on a second monitor and on a Retina display | Each badge sits on the top-left corner of its element |

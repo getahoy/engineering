@@ -157,6 +157,27 @@ boundary.
    Try again resends the same `commandId`, or re-uploads the same file if transcription
    failed
 
+## Click and choose (mobile ⇄ agent ⇄ helper)
+
+1. "Click Save" → `core/commands/parseScreenCommand.ts` (or the AI's `click` action) →
+   `commandRunner.ts` `runGuarded`: front bundle id from `frontApp.ts` against
+   `core/safety/blockedApps.ts` (unknown → refused)
+2. `shell/commands/clickIntent.ts` → helper `snapshot` ║ stdio ║ `snapshotWalk.swift`
+   (title, description, help, placeholder, subrole, enabled) → `core/resolver/resolveTarget.ts`
+3. One match: destructive (`core/resolver/destructiveLabels.ts`) → confirm choice; otherwise
+   wait 100 ms, snapshot again, `core/resolver/stableTarget.ts` (same app, window, element
+   count; same label and place) → helper `click` (`AXPress`, else a coordinate click)
+4. Several matches or a miss: helper `overlay` ║ stdio ║ `overlay.swift` badges (converted by
+   `cocoaRect` in `displays.swift`) → `command.result { needsChoice, choices, confirm }`;
+   `choiceBook.ts` keeps it 20 s and drops it on a new command or `frontWindowChanged`
+   (`frontWindowWatch.swift`)
+5. Phone `talk/components/choiceSheet.tsx` (`@gorhom/bottom-sheet`) → `talkFlow.choose` →
+   `command.choose { commandId (new), parentId, number }` ║ LAN, Noise ║
+   `commandReceiver.ts` → `ChoiceBook.pick` → the same checks as step 3; stale → "The screen
+   changed, say it again"
+6. `commandReceiver.ts` records each outcome in `core/safety/breaker.ts`; tripped → every
+   command answers a one-option Resume choice until it is picked
+
 ## Helper command (agent)
 
 1. Caller (`dev/consoleCommands.ts` today, the pipeline in feature 7) →

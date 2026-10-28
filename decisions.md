@@ -4,6 +4,40 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-29 — Safety: a fail-closed app blocklist and a sticky breaker
+
+Clicks, shortcuts and typing are refused when the front app's bundle id is on the blocklist
+(password managers, Keychain Access, Passwords by default; editable in `settings.json`) or when
+the front app cannot be read. The breaker trips at more than 30 commands a minute or 5
+failures in a row and stays tripped until the person taps Resume, which is a one-option
+choice on the phone. Rejected: banking apps by default (bundle ids vary by bank and country),
+an automatic reset after a minute. Reverse: drop `core/safety`.
+
+## 2026-10-29 — Choosing and confirming reuse one mechanism on both devices
+
+Several matches, a miss and a destructive target all answer `needsChoice` with numbered
+`choices`; a destructive one sets `confirm`. The Mac keeps one pending choice for 20 s and drops
+it on a new command or a front window change; a pick is `command.choose` with a new id and the
+parent id, so dedupe still works. The phone shows a `@gorhom/bottom-sheet` that closes when
+the choice expires. Rejected: a separate confirm frame, reusing the parent id. Reverse: remove
+`choices`, `confirm` and `command.choose` (additive, so older peers never noticed).
+
+## 2026-10-29 — Clicks happen only after two snapshots agree
+
+A click resolves the label, waits 100 ms, snapshots again and clicks only when the app, window
+frame and element count are the same and the target has the same label in the same place.
+The helper presses first and falls back to a coordinate click, which needs no conversion
+because accessibility and mouse events share global points; the overlay is the one place
+that converts (`cocoaRect`). Rejected: clicking from the first snapshot (stale after any
+animation). Reverse: call `click` straight after resolving.
+
+## 2026-10-29 — The resolver is pure core, matching five accessibility fields in three tiers
+
+`core/resolver` keeps enabled, non-empty elements whose centre is in the window, matches title,
+description, help, placeholder and subrole after removing ellipses and punctuation, and tries
+exact, whole word, then contains. Nested copies at one frame collapse to the pressable one.
+Rejected: fuzzy scores (they guess; the plan says ask). Reverse: replace `resolveTarget`.
+
 ## 2026-10-28 — Email drafts carry AI-written text; they never send
 
 `draftEmail { to, subject, body, via }` lets the AI write the subject and body, unlike `type`,

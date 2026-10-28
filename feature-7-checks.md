@@ -24,3 +24,5 @@ agent. `pnpm eval:interpret` in web should pass every case first.
 | 16 | "Write a Gmail to rahul at example dot com saying I'll be late" | Gmail compose opens in the browser, filled in, not sent |
 | 17 | "Send an email to x at y dot com saying hi" | A draft opens; it is not sent and no Return is pressed |
 | 18 | "Email this to my boss" | Nothing opens; the parser's message |
+| 19 | Chrome is the default browser: "open gmail in Arc", then "search cats on Safari" (bug 9) | Gmail opens in Arc; the search opens in Safari; "Opened mail.google.com in Arc" |
+| 20 | "Open YouTube in Brave" with Brave not installed | Nothing opens; no other browser is used instead |

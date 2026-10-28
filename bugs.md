@@ -15,4 +15,5 @@ Status is `open`, or `fixed in <repo> <commit>`.
 | 5 | 2026-10-28 | Signed in again after the automatic sign-out | Only my own Macs | The pairing survived sign-out, so any account signing in on the phone would control the Mac | fixed in mobile 2579b97; check 6.23 |
 | 6 | 2026-10-28 | Reloaded the app | Talk button active when the card says Connected | Card said Connected, button said "Connect to your Mac to talk" | fixed in mobile 90fd959; check 6.24 |
 | 7 | 2026-10-28 | Said "hide VS Code" (found in review) | VS Code hides | Failed: its process is named Code, not Visual Studio Code | fixed in agent 1ca0114; check 6.25 |
+| 9 | 2026-10-28 | Said "open gmail in arc" | Gmail opens in Arc | Opened in Chrome: sites, searches and Gmail drafts used the default browser | fixed in agent, web, shared (browser field); check 7.19 |
 | 8 | 2026-10-28 | Held-out eval: "switch to the notion tab" sent straight to the AI | switchTab notion | closeTab notion. On the phone the Mac's parser catches this phrase first, so only other wordings reach the AI | open |

@@ -4,6 +4,25 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-30 — Voice replies: server voice first, device voice as the fallback
+
+Text becomes speech only in web's `/api/speak` (ElevenLabs Flash, a small streamed MP3, voice
+ids from server env); the phone and Mac only play it. If it fails or the first audio is not
+ready in 1.5 s, the device voice speaks instead (expo-speech, `say`) and the server request is
+aborted, so the two never overlap. Replies play on the phone by default and speak only
+questions and problems; successes chime. Rejected: an SDK or key in the apps, device voice only
+(poorer quality). Reverse: set every phone to Off.
+
+## 2026-10-30 — Spoken choices: tap-only confirm, no auto-listening, a careful delegate
+
+A short answer (4 words or fewer) to an open choice is parsed on the Mac, including Hindi and
+sound-alike numbers; anything longer is a new command that replaces the choice. A destructive
+confirm is never accepted by voice, and Ahoy never opens the microphone on its own. "You pick"
+chooses option one through the normal safe-click path and says which, but never for a
+destructive choice. Threads grow only when Ahoy asked something back, three follow-ups at most.
+Rejected: voice confirm (one mishearing deletes), time-based threads. Reverse: drop
+`parseChoiceAnswer` from `commandTurns.ts`.
+
 ## 2026-10-29 — Safety: a fail-closed app blocklist and a sticky breaker
 
 Clicks, shortcuts and typing are refused when the front app's bundle id is on the blocklist

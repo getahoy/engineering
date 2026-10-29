@@ -165,8 +165,8 @@ boundary.
 2. `shell/commands/clickIntent.ts` → helper `snapshot` ║ stdio ║ `snapshotWalk.swift`
    (title, description, help, placeholder, subrole, enabled) → `core/resolver/resolveTarget.ts`
 3. One match: destructive (`core/resolver/destructiveLabels.ts`) → confirm choice; otherwise
-   wait 100 ms, snapshot again, `core/resolver/stableTarget.ts` (same app, window, element
-   count; same label and place) → helper `click` (`AXPress`, else a coordinate click)
+   wait 100 ms, snapshot again, `core/resolver/stableTarget.ts` (same app and window; the
+   target has the same label and place) → helper `click` (`AXPress`, else a coordinate click)
 4. Several matches or a miss: helper `overlay` ║ stdio ║ `overlay.swift` badges (converted by
    `cocoaRect` in `displays.swift`) → `command.result { needsChoice, choices, confirm }`;
    `choiceBook.ts` keeps it 20 s and drops it on a new command or `frontWindowChanged`
@@ -177,6 +177,35 @@ boundary.
    changed, say it again"
 6. `commandReceiver.ts` records each outcome in `core/safety/breaker.ts`; tripped → every
    command answers a one-option Resume choice until it is picked
+
+## Voice out (agent ⇄ web ⇄ mobile)
+
+1. Every phone `command` carries `speakOn` from `voice/storage/voiceSettings.ts` (MMKV)
+2. Mac `commandReceiver.ts` → `resultFrame.ts` → `core/voice/buildSpeech.ts` (a short line,
+   never screen text) → `command.result { threadId, message, speech }` ║ LAN, Noise ║ phone
+3. Phone `voice/hooks/useVoiceReplies.ts` → `voice/replyAction.ts` (policy, current, age,
+   recording, screen reader) → speak, chime (`assets/sounds/done.m4a` + haptic), announce
+   (`announceForAccessibility`) or quiet
+4. Speak: `voice/engine/fallbackVoice.ts` → `elevenLabsVoice.ts` (`speechCache.ts`, else
+   `client/speakApi.ts`) ║ HTTPS ║ web `app/api/speak/route.ts` → `features/speech/server/
+   elevenLabs.ts` ║ HTTPS ║ ElevenLabs → MP3 → `audioPlayback.ts` (expo-audio); no audio in
+   1.5 s or an error → request aborted → `deviceVoice.ts` (expo-speech)
+5. `speakOn` includes the Mac: `shell/voice/macVoice.ts` → the same `/api/speak` with the Mac
+   bearer → temp file → `afplay` ║ process ║; failure → `say` (argument list)
+6. Press talk: phone `talkFlow.press` → voice stop (80 ms fade) → `speech.stop` and
+   `choice.extend` ║ LAN ║ Mac `commandReceiver.ts` (only from the owning session)
+
+## Spoken choice (mobile ⇄ agent)
+
+1. A choice is open in `choiceBook.ts`; the user holds talk and says "two" → `command`
+2. `commandTurns.ts` at run time: same session, choice open, ≤ 4 words →
+   `core/voice/parseChoiceAnswer.ts` → pick, out of range, cancel or delegate; anything else
+   expires the choice (replaced) and runs as a new command
+3. `choiceAnswers.ts`: a pick → `ChoiceBook.pick` → the safe-click path; a destructive confirm
+   is tap only; "you pick" → option one unless destructive (`core/voice/threadRules.ts`); more
+   than three follow-ups → "Let's start over."
+4. The result keeps the root `threadId` → phone `talk/hooks/useThread.ts` →
+   `talk/threads/threadStore.ts` → `talk/components/threadView.tsx`
 
 ## Helper command (agent)
 

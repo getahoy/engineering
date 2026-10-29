@@ -11,10 +11,10 @@ native modules); `pnpm start` in agent.
 | 3 | "Click save" with two Save buttons | Speaks the two-option line; tags on Mac; sheet on phone |
 | 4 | …then hold and say "two" | Clicks the second; "Done. Clicked Save."; one thread, folded after |
 | 5 | …same, say "doosra" | Same as 4 |
-| 6 | …same, say "five" | "There are only two. Say one or two."; choice stays open |
+| 6 | …same, say "five" | "There are only two. Say one or two."; choice stays open, sheet stays on the phone, tapping 2 still clicks |
 | 7 | …same, say "you pick" | "Picked one, the Save in the toolbar." and clicks it |
-| 8 | "Delete" with two Delete buttons, say "you pick" | "I won't pick for a delete…"; nothing clicked |
-| 9 | Confirm sheet open, say "yes" | Not confirmed; "Tap Delete on your phone to confirm." |
+| 8 | "Delete" with two Delete buttons, say "you pick" | "I won't pick for a delete…"; nothing clicked; Mac tags and phone sheet stay |
+| 9 | Confirm sheet open, say "yes" | Not confirmed; "Tap Delete on your phone to confirm."; the confirm sheet is still there to tap |
 | 10 | Press talk while Ahoy is speaking | Speech stops instantly; recording starts |
 | 11 | Hold for 25 s answering an open choice | Choice doesn't expire mid-answer |
 | 12 | Answer a choice, then say "open Spotify" instead | Choice closes as replaced; Spotify opens |
@@ -33,3 +33,6 @@ native modules); `pnpm start` in agent.
 | 25 | Background the app mid-speech | Speech stops |
 | 26 | Remove the voice env vars and restart web, then policy Everything | The device voice speaks; no error shown |
 | 27 | Two Save buttons both in the toolbar | "I see two Save buttons. Say one or two." with no areas |
+| 28 | Speak on: Mac, Speak: Off | Nothing speaks on either device |
+| 29 | Make the Mac take over 10 s to answer (pause it in the debugger) | Text shows, nothing is spoken |
+| 30 | Draft an email with the browser closed so it fails | No "Drafted an email" spoken |

@@ -15,7 +15,26 @@ lint and tests pass.
 | `feat: add the welcome screen with the opening animation` | 2.1: `src/features/welcome/`, splash hold (`useSplashHold`, max 3 s), signed-out redirect to `/welcome` |
 | `feat: restyle sign in and add the signing in screen` | 2.2: pennant (`ui/pennant`, PNG mask from `scripts/buildBrandAssets.py`), auth layout, errors split (credential under fields, Google under buttons), `SigningIn` overlay after the Google return (Cancel after 6 s), cold-start gate `useSessionGate` (splash ≤ 3 s, signing-in after, gives up at 6 s). Shared `authCopy` gained `session.signingIn/slow/cancel` (shared commit `2834572`) |
 
-## Next: 2.3 home + talk (layout 1b), notes already gathered
+| `feat: rebuild home and talk with mac states` | 2.3 + 2.4 in one commit (the old cards owned the connections, so they could not go separately). `MacConnections` (in `LiveMacLinksProvider`) keeps every paired Mac connected; Home calls `useKeepMacsConnected`. Selected Mac in MMKV (`storage/selectedMac.ts`); `useTalkTarget` = selected → connected → first. `macStatus.ts` maps every state to chip label, dot tone and message (ended reason bug fixed). `HomeMac` = chip + P1/P2/P3 card; `TalkPanel` = Heard line (30 px), `ReplyCard`, `TalkBar` (76 px, orb 300×220). Pure view logic in `talkView.ts` (tested) and `talkBarView.ts` |
+
+## Next: 2.5 sheets, then 2.6 pairing, 2.7 settings, 2.8 leftovers
+
+- **2.5:** replace the `Alert.alert` menu in `pairing/hooks/useMacCardActions.ts` (`openMenu`) and
+  in `useUnpairMac` / `useConfirmSignOut` with `ui/sheet`. More options: title = Mac name,
+  status line, with 2+ Macs a "Talk to" group first (`macCopy.talkTo`; one row per Mac with
+  its chip word, Signal checkmark on the selected one, tap → `useSelectedMac().select`), then
+  Connect/Disconnect (Ink), Remove this Mac (outline, Flare text), Cancel. Remove and sign-out
+  confirms use `tone="danger"`. Restyle `talk/components/choiceSheet.tsx` + `choiceButtons.tsx`
+  on `ui/sheet` (drain bar over a 2 px Rope track, rows 64 px, "None of these" + "or say a
+  number", expired state: rows at 40 % and not tappable, title "That screen changed. Ask
+  again.", Close). Add the 2-Mac sheet to the gallery.
+- **2.7:** Settings must bring back **Add another Mac** (removed from Home in 2.3, it is only
+  in the mockup's Settings now) and list every paired Mac.
+- Reply eyebrow has no duration ("Done · 0.8s"): the answer time is not stored; add it only
+  if the thread keeps a received time.
+- `src/features/pairing/macStatus.test.ts` was deleted on disk after this step; I left it out.
+
+## Notes gathered for 2.3 (built)
 
 Mockup (`Ahoy iPhone.dc.html`, `vHomeB`):
 - Header row 56 px, padding 16 left / 10 right. Left: Mac chip (h-9 pill, Paper, Rope border,

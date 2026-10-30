@@ -163,9 +163,9 @@ fix: resolver offscreen elements
 ### Staging
 
 - Stage explicit paths. **Never `git add -A` or `git add .`**
-- Never commit generated markdown: specs, plans and review output go in the scratchpad or stay
-  untracked. The living docs in `engineering/` are the exception — they are maintained, not
-  generated.
+- Specs, plans and handoff notes may be committed in `engineering/` only, never in an app
+  repo (`mobile`, `agent`, `web`, `shared`, `docs`). Review output stays in the scratchpad.
+  The living docs in `engineering/` are committed as usual.
 
 ### Pre-push checklist
 

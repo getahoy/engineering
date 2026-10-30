@@ -4,6 +4,23 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-31 — Phone fonts: static Fraunces cuts embedded at build time
+
+React Native cannot set variable-font axes, so `mobile/scripts/buildFonts.py` pins Fraunces
+(opsz 72, SOFT 100, WONK 1, weights 300/400, upright and italic), Inter (opsz 14) and Geist
+Mono into static files whose PostScript name equals the file name, so one `fontFamily` works on
+iOS and Android. The `expo-font` config plugin embeds them, so text never waits on a font load.
+Rejected: `@expo-google-fonts/*` (normal cuts, no WONK), runtime `useFonts`. Reverse: delete
+`assets/fonts/` and the plugin entry.
+
+## 2026-10-31 — Orb gradient: React Native backgroundImage, not a class
+
+Uniwind compiles any `radial-gradient()` to an empty string, so the orb reads its stop colours
+from `global.css` tokens with `useCSSVariable` and passes `backgroundImage` to the view as its
+one inline style. React Native 0.88 draws radial gradients natively on iOS and Android.
+Rejected: Skia (a native dependency for one gradient). Reverse: once Uniwind supports radial
+gradients, move the gradient into a `@utility` class.
+
 ## 2026-10-30 — Voice replies: server voice first, device voice as the fallback
 
 Text becomes speech only in web's `/api/speak` (ElevenLabs Flash, a small streamed MP3, voice

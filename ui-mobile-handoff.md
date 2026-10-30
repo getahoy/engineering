@@ -17,7 +17,13 @@ lint and tests pass.
 
 | `feat: rebuild home and talk with mac states` | 2.3 + 2.4 in one commit (the old cards owned the connections, so they could not go separately). `MacConnections` (in `LiveMacLinksProvider`) keeps every paired Mac connected; Home calls `useKeepMacsConnected`. Selected Mac in MMKV (`storage/selectedMac.ts`); `useTalkTarget` = selected → connected → first. `macStatus.ts` maps every state to chip label, dot tone and message (ended reason bug fixed). `HomeMac` = chip + P1/P2/P3 card; `TalkPanel` = Heard line (30 px), `ReplyCard`, `TalkBar` (76 px, orb 300×220). Pure view logic in `talkView.ts` (tested) and `talkBarView.ts` |
 
-## Next: 2.5 sheets, then 2.6 pairing, 2.7 settings, 2.8 leftovers
+| `feat: replace alerts with sheets and rebuild settings` | 2.5 + 2.7: `ui/confirmSheet`, `ui/optionRow`, More options with "Talk to", Which one? with expired state, Settings (Macs, Voice replies sheets, account, sign out). `ui/sheet` now renders through the root `Portal` |
+| `feat: restyle pairing and the error fallback` | 2.6 + 2.8: pairing screens, error fallback, legacy shadcn aliases removed |
+
+**The phone UI build in the spec is complete.** Left for later: network banner wiring
+(`design/handoff/network-state.md`), duration on the reply eyebrow, Android check.
+
+## Earlier plan for 2.5–2.8 (built)
 
 - **2.5:** replace the `Alert.alert` menu in `pairing/hooks/useMacCardActions.ts` (`openMenu`) and
   in `useUnpairMac` / `useConfirmSignOut` with `ui/sheet`. More options: title = Mac name,

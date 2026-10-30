@@ -16,7 +16,7 @@ boundary.
 | mobile | `src/app/_layout.tsx` | Expo Router stack, session guards, `getRandomValues` polyfill |
 | mobile | `src/app/pair.tsx` | QR scanner and pairing claim |
 | agent | `src/main.ts` | Electron main process, composition root |
-| agent | `src/renderer/main.tsx` | Main window React app |
+| agent | `src/renderer/main.tsx` | One renderer bundle; `?surface=window` main window, `popover` menu bar popover, `gallery` dev-only component gallery |
 | agent | `src/dev/helperConsole.ts` (`pnpm helper`) | Dev console driving the Swift helper |
 | helper | `native/macos-helper/Sources/ahoyHelper/main.swift` | Swift process reading JSON lines on stdin |
 
@@ -46,15 +46,26 @@ boundary.
 ## Agent startup
 
 1. `main.ts`: single-instance lock, hide the Dock, read `settings.json` (`shell/settingsStore.ts`)
-2. Build `MacosPlatform`, `AgentController`, `HelperClient`, `MainWindow`, `AgentTray`;
-   `shell/bridgeIpc.ts` registers the IPC handlers
+2. Build `MacosPlatform`, `AgentController`, `HelperClient`; `shell/shellSurfaces.ts` builds
+   `MainWindow`, `PopoverWindow` (kept hidden, reopens instantly) and `AgentTray`;
+   `shell/bridgeIpc.ts` registers the IPC handlers and pushes state to every window
 3. `HelperClient.start()` ║ spawn ║ `ahoyHelper` (debug build in dev,
    `Contents/Resources/ahoyHelper` when packaged); `ready` and `exited` update the controller
 4. Permission polling every 2 s (`systemPreferences`) and `powerMonitor` lock events update the
-   controller, which re-renders the tray menu and pushes state to the window
+   controller, which swaps the tray pennant icon (`menubarStatus`) and pushes state to the windows
 5. Onboarding not done → `MainWindow.show()` (Dock shown, focus stolen) ║ IPC ║ `preload.ts`
-   bridge ║ `renderer/agentApp.tsx` picks welcome, permissions or pair from `state.screen`
+   bridge ║ `renderer/agentApp.tsx` picks a `setup/` step or `window/windowApp.tsx` from
+   `state.screen`
 6. A button press ║ IPC ║ `AgentController.completeStep` → writes `settings.json` → new state
+
+## Menu bar popover (agent)
+
+1. Tray left click → `PopoverWindow.toggle(trayBounds)`: placed under the icon on the display
+   that holds it, always on top while open; blur or Esc hides it
+2. Renderer `popover/popoverApp.tsx` reads state over the same bridge; a `ResizeObserver` sends
+   its height ║ IPC `setPopoverHeight` ║ window resized
+3. Open Ahoy / Show QR code ║ IPC `openWindow` → popover hides, main window shows. Right click
+   → native menu (Open Ahoy, Quit Ahoy, Component gallery in dev)
 
 ## API request (any web route)
 

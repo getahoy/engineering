@@ -4,6 +4,28 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-31 — Mac remove and sign-out confirm in the renderer, not a native dialog
+
+`unpairPhone` and `signOutMac` no longer call `dialog.showMessageBox`; the designed
+`ConfirmDialog` (Flare header) asks first and the IPC call acts straight away. Keeping both would
+ask twice. Rejected: native dialog only (off-brand, no Flare header). Reverse: restore
+`confirmed()` in `shell/pairing/unpairPhone.ts` and drop the renderer dialogs.
+
+## 2026-10-31 — Mac popover is a vibrancy BrowserWindow sized by its content
+
+The tray popover is a frameless, transparent `BrowserWindow` (`vibrancy: "popover"`) built once
+and hidden, so it reopens instantly; the renderer reports its height over IPC. Rejected: the
+native tray menu (cannot hold a switch, cards or status pills), a fixed height (transparent
+rows would swallow clicks). Reverse: delete `shell/popoverWindow.ts`, set a context menu again.
+
+## 2026-10-31 — Mac colour tokens use CSS light-dark()
+
+Each token is `light-dark(light, dark)`, resolved where it is used, so the app follows the system
+appearance and a gallery frame with `color-scheme: dark` previews dark beside light. `cn` is
+built with `createCn` listing the custom font sizes, because the merger otherwise reads
+`text-ui` as a colour and drops `text-on-ink`. Rejected: a `prefers-color-scheme` block (no
+side-by-side preview). Reverse: move dark values back into a media query.
+
 ## 2026-10-31 — Phone fonts: static Fraunces cuts embedded at build time
 
 React Native cannot set variable-font axes, so `mobile/scripts/buildFonts.py` pins Fraunces

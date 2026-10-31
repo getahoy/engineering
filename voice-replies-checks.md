@@ -27,7 +27,7 @@ native modules); `pnpm start` in agent.
 | 19 | AirPods connected, a full talk then a reply | Reply plays clearly in AirPods |
 | 20 | Speak on: Mac | The Mac speaks; the phone is quiet |
 | 21 | Speak on: Mac, press talk while the Mac is speaking | The Mac stops |
-| 22 | "Draft a mail to samar at gmail dot com saying hi" | "Drafted an email to Samar. Check it and press Send." No address read out |
+| 22 | "Draft a mail to jake at gmail dot com saying hi" | "Drafted an email to Jake. Check it and press Send." No address read out |
 | 23 | Same phrase twice | Second plays instantly (cache) |
 | 24 | Two commands quickly; the first's result arrives late | Only the latest is spoken |
 | 25 | Background the app mid-speech | Speech stops |

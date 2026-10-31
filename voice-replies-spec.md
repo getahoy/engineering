@@ -60,7 +60,7 @@ Templates per status, written to be heard, not read:
 | not found, with near-misses | "I can't find Sav. Did you mean one of these?" |
 | not found, nothing close | "I can't find Sav on screen. Try saying it differently." |
 | destructive confirm | "This will delete Q3 draft. Tap Delete on your phone to confirm." |
-| draftEmail | "Drafted an email to Samar. Check it and press Send." |
+| draftEmail | "Drafted an email to Jake. Check it and press Send." |
 | AI unavailable | "Smart commands aren't working right now." |
 | refused (locked etc.) | the same as the message, shortened |
 
@@ -233,7 +233,7 @@ Sound Effects or taken from a CC0 library). Use a placeholder until then.
 | 19 | AirPods connected, a full talk then a reply | Reply plays clearly in AirPods |
 | 20 | Speak on: Mac | The Mac speaks; the phone is quiet |
 | 21 | Speak on: Mac, press talk while the Mac is speaking | The Mac stops |
-| 22 | "Draft a mail to samar at gmail dot com saying hi" | "Drafted an email to Samar. Check it and press Send." No address read out |
+| 22 | "Draft a mail to jake at gmail dot com saying hi" | "Drafted an email to Jake. Check it and press Send." No address read out |
 | 23 | Same phrase twice | Second plays instantly (cache) |
 | 24 | Two commands quickly; the first's result arrives late | Only the latest is spoken |
 | 25 | Background the app mid-speech | Speech stops |

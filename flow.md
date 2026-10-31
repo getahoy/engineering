@@ -12,6 +12,8 @@ boundary.
 | web | `src/app/api/pairing/{claim,complete}/route.ts` | Pairing API, each wrapped by `features/api/server/apiRoute.ts`; device codes live under `/api/auth/device/*` (Better Auth) |
 | web | `src/app/api/transcribe/route.ts` | Speech to text for the phone's talk button |
 | web | `src/app/api/interpret/route.ts` | Smart commands: text to up to 3 actions, called by the Mac |
+| web | `src/app/page.tsx` | Landing page at `/` (static), `features/landing/screens/landingScreen.tsx` |
+| web | `src/app/api/waitlist/route.ts` | Early-access signup from the landing page capsules |
 | web | `scripts/evalInterpret.ts` (`pnpm eval:interpret`) | Manual run of the cases in `scripts/interpretCases.ts` against the interpret route, checked automatically, with a pass/fail table |
 | mobile | `src/app/_layout.tsx` | Expo Router stack, session guards, `getRandomValues` polyfill |
 | mobile | `src/app/pair.tsx` | QR scanner and pairing claim |
@@ -42,6 +44,21 @@ boundary.
   `/account`, or `/sign-in?error=<code>` → `socialSignInError.tsx` → `socialErrorMessage`
 - mobile: `useSocialSignIn` → expo client opens `expo-web-browser` sheet ║ Google ║ web callback
   ║ `ahoy://` back into the app → session or the generic `error.social` message
+
+## Join the waitlist (web)
+
+1. `components/waitlistCapsule.tsx` (hero `source: "hero"`, CTA band `"cta"`) →
+   `hooks/useWaitlistCapsule.ts` checks the email with `forms/waitlistRequest.ts`
+   `waitlistEmailSchema`; invalid stops here with the inline message
+2. `hooks/useJoinWaitlist.ts` → `request()` (`@getahoy/lib`) ║ HTTP POST `/api/waitlist` ║
+   `apiRoute("waitlist")`
+3. `server/waitlistRateLimit.ts` → `consumeRateLimit("waitlist:ip:<x-real-ip>", 5/min)` ║ Neon
+   → over the limit `rate_limited` 429
+4. `readJson(waitlistRequestSchema)` → filled `company` honeypot answers success, saves nothing
+5. `server/joinWaitlist.ts` → insert `waitlist_signups` on conflict do nothing ║ Neon → the same
+   `{ joined: true }` for new and existing emails; the log line holds the outcome only
+6. Capsule: `useSpinnerVisible` (300 ms delay, 500 ms minimum) → success in place, or
+   `errors/waitlistNotice.ts` maps the `RequestError` to one line plus retry
 
 ## Agent startup
 

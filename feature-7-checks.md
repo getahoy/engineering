@@ -20,7 +20,7 @@ agent. `pnpm eval:interpret` in web should pass every case first.
 | 12 | Safari closed, "close the Grok tab in Safari" | "Safari isn't open"; Safari does not launch |
 | 13 | First tab command, deny the Automation prompt | "Allow Ahoy to control Google Chrome in System Settings → Privacy & Security → Automation." |
 | 14 | "Close tab" | The current tab closes; no app named Tab… quits |
-| 15 | "Draft a mail to samar abbas at gmail dot com about the hackathon credits" | Mail opens a draft to samarabbas@gmail.com with a subject and body; nothing is sent; "Drafted an email to samarabbas@gmail.com. Check it and press Send." |
+| 15 | "Draft a mail to jake bauer at gmail dot com about the hackathon credits" | Mail opens a draft to jakebauer@gmail.com with a subject and body; nothing is sent; "Drafted an email to jakebauer@gmail.com. Check it and press Send." |
 | 16 | "Write a Gmail to rahul at example dot com saying I'll be late" | Gmail compose opens in the browser, filled in, not sent |
 | 17 | "Send an email to x at y dot com saying hi" | A draft opens; it is not sent and no Return is pressed |
 | 18 | "Email this to my boss" | Nothing opens; the parser's message |

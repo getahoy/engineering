@@ -4,6 +4,45 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-10-31 — Landing "Try it" listens in the browser behind a DemoListener port
+
+The demo uses the browser's speech recognition (en-IN, one phrase, 6 s), keyword rules in
+`listening/matchSpoken.ts`, and prerecorded ElevenLabs clips (`pnpm voice:landing`). No server call, so no cost or
+abuse surface, but Firefox has no API and Brave/Arc expose it and then fail. Rejected for now:
+a public speech-to-text route (cost, rate limits, privacy line changes). Reverse or extend:
+add a recorder listener in `listening/` and return it from `createDemoListener()`.
+
+## 2026-10-31 — Web cn built with createCn, shadcn alias points at it
+
+`web/src/lib/cn.ts` is `createCn` from `cn/config` listing the Ahoy text sizes, and
+`components.json` `utils` plus the shadcn primitives import it. The default merger read
+`text-button` and `text-body` as colours and dropped them beside `text-white` inside `Button` and
+`Input`. Rejected: a landing-only cn (shadcn merges inside its own files). Reverse: point the
+imports back at `cn` and drop custom sizes from shadcn class names.
+
+## 2026-10-31 — Landing CSP allows inline scripts so `/` stays static
+
+Production headers come from `next.config.ts` with `script-src 'self' 'unsafe-inline'`.
+Nonces force every request through the server. Experimental SRI only adds `integrity` to the
+external chunks (12 on `/`); the 18 inline RSC payload scripts would still need
+`'unsafe-inline'` or per-build hashes Next does not emit. Rejected: nonce in `proxy.ts`.
+Reverse: nonce proxy plus dynamic `/`.
+
+## 2026-10-31 — Waitlist answers the same for new, existing and honeypot signups
+
+`POST /api/waitlist` inserts with `on conflict do nothing` and replies `{ joined: true }` either
+way; a filled `company` field saves nothing. The form cannot reveal who signed up. Rate limit
+keys on `x-real-ip`, which Vercel sets itself (pairing claim switched to it too). Rejected: a
+409 for duplicates, raw `x-forwarded-for`. Reverse: branch on the insert result in the route.
+
+## 2026-10-31 — Landing tokens live beside the shadcn variables
+
+Ahoy colours, sizes and radii are new `@theme` names in `globals.css`; the shadcn variables
+(`--background`, `--primary`) are untouched so `/sign-in`, `/sign-up` and `/account` look the
+same. Fonts load in `features/landing/fonts` and apply on the landing root as `font-display`,
+`font-text`, `font-label`, not `font-sans`. Rejected: remapping shadcn variables (restyles the
+auth pages). Reverse: map shadcn variables to the Ahoy tokens.
+
 ## 2026-10-31 — Mac remove and sign-out confirm in the renderer, not a native dialog
 
 `unpairPhone` and `signOutMac` no longer call `dialog.showMessageBox`; the designed

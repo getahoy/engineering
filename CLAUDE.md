@@ -581,7 +581,9 @@ value falls back instead of crashing. Nothing secret in MMKV.
   `text-muted-foreground`, `text-destructive`, …), never raw palette colours like
   `bg-red-500`.
 - Add primitives only with `pnpm dlx shadcn@latest add <name>`.
-- `cn` comes from the `cn` package (shadcn's). There is no `lib/utils.ts`.
+- `cn` comes from the `cn` package (shadcn's), built with `createCn` in `src/lib/cn.ts` so
+  custom `text-*` sizes merge as sizes. The shadcn `utils` alias points there. There is no
+  `lib/utils.ts`.
 
 ## Safety
 

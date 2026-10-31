@@ -79,8 +79,8 @@ New action `draftEmail { to?, subject, body, via: "mail" | "gmail" }`, AI only.
 - `mail` opens a `mailto:` URL; `gmail` opens
   `https://mail.google.com/mail/?view=cm&to=…&su=…&body=…`. Everything URL-encoded.
 - **It never sends.** No Return or cmd+Return after it, ever. Reply: "Drafted an email to
-  samar@… Check it and press Send."
-- Validation: `to` must be a valid address. Spoken addresses ("samar abbas at gmail dot com")
+  jake@… Check it and press Send."
+- Validation: `to` must be a valid address. Spoken addresses ("jake bauer at gmail dot com")
   may be normalised by the AI; the letters of the local part must appear in the transcript.
   Subject ≤ 150 characters, body ≤ 1,500.
 - The body is AI-written (unlike `type`, which must be verbatim). That's allowed because it's a
@@ -97,8 +97,8 @@ Add to `eval:interpret`:
 - "go to my gmail tab" → switchTab gmail
 - "minimize this window" → keys cmd+M
 - "force quit" → none
-- "draft a mail to samar abbas at gmail dot com about the hackathon credits" → draftEmail to
-  samarabbas@gmail.com, sensible subject and body, via mail
+- "draft a mail to jake bauer at gmail dot com about the hackathon credits" → draftEmail to
+  jakebauer@gmail.com, sensible subject and body, via mail
 - "write a gmail to rahul at example dot com saying I'll be late" → draftEmail via gmail
 - "email this to my boss" → none (no address, and "this" needs the screen)
 - "send an email to x at y dot com saying hi" → draftEmail only, never sends

@@ -4,6 +4,52 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-02 — "Ended" eyebrow time is when this device found out
+
+The server's links reply has no end time, so U1/U2 show the age since this device learned of
+the end, plus "while Ahoy was closed" (phone, learned within 15 s of launch) or "while this
+Mac was asleep" (link check right after wake). Rejected for now: an `endedAt` field on the
+links response (needs `shared` + `web`). Reverse: add it and pass it as `at`.
+
+## 2026-11-02 — An ended pairing removes the Mac and leaves a notice
+
+The phone no longer keeps an ended Mac in `pairedMacs` with an Ended card; it removes it and
+saves `{ reason, deviceName, at, whileClosed }` in MMKV, shown on Home for 24 h. Old records with `ended`
+are migrated on load (`settleEndedMacs`). Rejected: keeping the tombstone on the phone (the
+Mac already keeps one; a dead row blocked the empty state). Reverse: restore the `ended`
+field on `PairedMac` and the Ended card from git history.
+
+## 2026-11-02 — Local Network guide only for a Mac never reached over LAN
+
+iOS has no API for the Local Network setting, and a denied one fails like an asleep Mac.
+The guide opens itself only on iOS, on Wi-Fi, with no goodbye reason, for a Mac without the
+MMKV `reachedOnLan` flag (set on each handshake, gone on reinstall like the permission).
+Everywhere else the Can't reach card carries a "Check Local Network" link. Rejected: guide
+on every unreachable (blames asleep Macs). Reverse: drop the flag, or use dial timing
+(`lanDial` dev log) if denial proves to fail instantly.
+
+## 2026-11-02 — Permission screens read Expo stage, restricted is not detectable
+
+Stage comes from `PermissionResponse`: undetermined → explainer, denied + canAskAgain →
+ask again (Android only in practice), denied → Settings guide. Expo maps iOS
+`.restricted` to `denied` (`CameraPermissionsRequester.swift`), so the restricted screen is
+built but nothing routes to it. Reverse: a native module reading `AVAuthorizationStatus`.
+
+## 2026-11-02 — Settings return survives an iOS restart through an MMKV flag
+
+iOS kills the app when a privacy toggle changes, so the gate writes `resumePairing` or
+`resumeTalk` before `Linking.openSettings()`; Home takes it at launch, any AppState
+`active` clears it. Rejected: route state (lost on restart). Reverse: delete
+`settingsReturn.ts` and its two callers.
+
+## 2026-11-01 — Scanner zoom is a 0–1 level mapped per camera curve, no × label
+
+expo-camera never sends the camera max zoom to JS, and maps `zoom` exponentially on iOS
+(`min × (max/min)^zoom`) but linearly on Android (`max(1, zoom × maxRatio)`). The UI keeps
+one level 0–1; `mobile/.../pairing/zoomScale.ts` maps it per curve (iOS `level × 0.4`,
+Android `0.125 × 4.8^level`, tuned for an 8× camera). Rejected: patching expo-camera to
+report max zoom (patch upkeep on every bump). Reverse: patch it and show real × values.
+
 ## 2026-10-31 — Landing "Try it" listens in the browser behind a DemoListener port
 
 The demo uses the browser's speech recognition (en-IN, one phrase, 6 s), keyword rules in

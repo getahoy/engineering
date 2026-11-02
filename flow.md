@@ -131,7 +131,29 @@ boundary.
 4. Phone sends an encrypted `ready`; the Mac counts it connected, sends `status { locked }`
    and repeats it on every lock change
 5. Timeout or close before a reply → phone `unreachable`, auto-retry every 5 s in the
-   foreground. Only a signed refusal marks the stored Mac `ended`
+   foreground. Only a signed refusal ends the pairing: `sync/endedMacs.ts` removes the
+   Mac and saves the one-time notice
+
+## Permissions (mobile)
+
+1. Camera: `pairScreen.tsx` → `useCameraGate` → `permissions/hooks/usePermissionGate.ts`
+   reads `permissionAccess.camera` on mount and on every AppState `active` → stage
+   (`permissionStage.ts`: explainer / again / guide / granted) → `PermissionGateView`.
+   `CameraView.onMountError` → couldn't start
+2. Microphone: hold to talk → `TalkFlow.press` → `useFileRecorder.start` reads the mic
+   permission fresh and returns `recording`, `needed` or `failed` ║ `needed` →
+   `/microphone` (explainer, again, guide); `failed` → `/microphone?failed=1`. Nothing
+   records on that press
+3. Open Settings: `rememberSettingsReturn` (MMKV `resumePairing` / `resumeTalk`) →
+   `Linking.openSettings()` ║ OS Settings ║ Android resumes → gate re-reads, clears the
+   flag; iOS restarts → `macsHomeScreen` → `useTurnedOnNotice` takes the flag → `/pair`
+   with `resumed=1` (haptic, Camera is on) or Home with Microphone is on
+4. Local Network (iOS): pairing done → `/local-network` explainer before any dial
+   (`useLocalNetworkIntro` holds `useKeepMacsConnected`) → Continue → first LAN dial ║ iOS
+   popup. `useLocalNetworkCheck` opens the guide once when the Mac is `unreachable`, the
+   phone is on Wi-Fi and `hasReachedOnLan` is false; otherwise the Can't reach card links to
+   it. `MacConnection` marks `reachedOnLan` on every handshake; the guide closes to Home
+   with Local Network is on when the Mac connects
 
 ## Pairing ends (either side)
 
@@ -140,9 +162,15 @@ boundary.
    `pendingUnlinks` in SecureStore on the phone) ║ HTTP ║ `/api/pairing/unlink` revokes the
    `device_links` row with `revoked_by` + `revoke_reason`; a new phone is revoked inside
    `completePairing` as `replaced`
-2. The other side, if connected, handles the goodbye at once: Mac `phoneEnded.ts` (banner,
-   one notification, tombstone); phone `MacConnection` (stored `ended`, ended card)
-3. If it was offline: Mac `LinkMonitor` (start, every 15 min, on wake) and phone
+2. The other side, if connected, handles the goodbye at once, only if its own record still
+   has the peer. Mac `phoneEnded.ts` → `phoneEnding` (core): tombstone, overlay, speech and
+   choices cleared, `endedNotice` in state, `PairingSession.restartAfterPhoneEnded` (fresh
+   QR unless one is showing), a notification only when no Ahoy window is visible → U1 in
+   Home, Pair a new phone and the popover. Phone `MacConnection` → `endPairedMac`: Mac
+   removed, MMKV notice `{ reason, deviceName, at, whileClosed }` → U1 on "Pair your Mac"
+   or U2 on the remaining Mac's home, until a new pairing, sign-out, ✕ / next command (U2)
+   or 24 h
+3. If it was offline: Mac `LinkMonitor` (start, every 15 min, wake, window or popover open) and phone
    `useLinkSync` (start, foreground) read `/api/pairing/links` and treat a revoked link like
    the goodbye. A later handshake gets the signed `not_paired` from the Mac's tombstone
 4. Pause: phone `goodbye paused` + stored `paused`; Mac shows "paused". Ahoy off, quit and

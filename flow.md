@@ -81,7 +81,8 @@ boundary.
    that holds it, always on top while open; blur or Esc hides it
 2. Renderer `popover/popoverApp.tsx` reads state over the same bridge; a `ResizeObserver` sends
    its height ║ IPC `setPopoverHeight` ║ window resized
-3. Open Ahoy / Show QR code ║ IPC `openWindow` → popover hides, main window shows. Right click
+3. Open Ahoy / Show QR code ║ IPC `openWindow` → main window shows, then popover hides, so a
+   code started while the popover was open survives the switch. Right click
    → native menu (Open Ahoy, Quit Ahoy, Component gallery in dev)
 
 ## API request (any web route)
@@ -99,24 +100,44 @@ boundary.
 
 ## Pairing (agent ⇄ web ⇄ mobile)
 
-1. Agent pair screen mounts ║ IPC `startPairing` ║ `shell/pairing/pairingSession.ts`
-2. `shell/pairing/deviceFlow.ts` → Better Auth client `device.code` ║ HTTP ║
+1. `shell/pairing/surfacePairing.ts` is the only owner of `shell/pairing/pairingSession.ts`.
+   On a surface showing or hiding, and a microtask after any state change (a phone ending
+   the pairing): no visible window or popover → pause; `needsPairingCode`
+   (`core/appState/appState.ts`) → start; otherwise resume, decided by
+   `core/pairing/pairingMove.ts`. Pause keeps a ready code and stops all network; resume
+   polls the same code again if it has 30 s left, else makes a new one. Anything not ready
+   is discarded on pause. `stop()` (discard) is only Cancel, sign-out and quit. The
+   renderer never starts or stops a session; IPC `startPairing` is only "Get a new code" and
+   the popover's Show QR code (then `openWindow`), through the same visibility gate. A
+   session that shows Scanned is never stopped, so an approved claim always completes
+2. `PairingSession` runs the code machine `core/pairing/pairingCode.ts` (events in, status
+   and next effect out): begin → `starting` (or `offline` when `net.isOnline()` is false,
+   checked every 2 s until back) → `slow` at 6 s → `offering`; a missed request retries
+   once silently, then `failed`. At expiry → `refreshing` (old code kept) → new `offering`,
+   or `expired` when the refresh misses. Poll approved → `scanned` → complete → `paired`
+3. `shell/pairing/deviceFlow.ts` → Better Auth client `device.code` ║ HTTP ║
    `/api/auth/device/code` (`deviceAuthorization`, client `ahoy-desktop`, 5 min) ║ Neon
-   `device_code`
-3. Agent draws the QR (`core/pairing/pairingTerms.ts`, `react-qrcode-logo`): Mac key, name,
-   user code, one-time secret (never sent to web), LAN addresses + port 7421, expiry. Polls
-   `device.token` at the returned interval, slowing down when told
-4. Phone `pairScreen.tsx` → `QrScanner` (expo-camera) → `useClaimMac` →
-   `enrollment/claimScannedCode.ts`: proof = keyed BLAKE2b(secret, phone key ‖ Mac key)
-5. `POST /api/pairing/claim` with the session cookie ║ HTTP ║ `claimPairing`: one
+   `device_code`. 15 s deadline per request and per poll (`core/pairing/deadline.ts`); a
+   late poll counts as a network miss and polls again
+4. Renderer `pairing/pairingCode.tsx` draws one `QrFrame` everywhere (168 px, 216 px on
+   first run): the code is an SVG from `qrcode-generator` at level H with the pennant on a
+   9×9-module Paper square (`components/ui/qrCode.tsx`); spinner only after 300 ms and held
+   500 ms (`useShownCode`); a three-line `aria-live` caption per state (`pairingCodeCopy`).
+   Payload: Mac key, name, user code, one-time secret (never sent to web), LAN addresses +
+   port 7421, expiry. Polls `device.token` at the returned interval, slowing down when told
+5. Phone `pairScreen.tsx` → `ScannerPreview` (expo-camera) → `usePairScanner` →
+   `useClaimMac` (state machine in `scannerFlow.ts`, one bottom `ScannerMessageSlot`) →
+   `enrollment/claimScannedCode.ts`: proof = keyed BLAKE2b(secret, phone key ‖ Mac key);
+   claim errors map to typed kinds in `enrollment/claimFailure.ts`
+6. `POST /api/pairing/claim` with the session cookie ║ HTTP ║ `claimPairing`: one
    transaction upserts the phone in `devices` and writes `pairing_claims` (user code, phone,
    Mac key, proof), then `auth.api.deviceApprove`; a refusal deletes the claim
-6. Next agent poll returns a session token ║ `POST /api/pairing/complete` with
+7. Next agent poll returns a session token (Mac shows Scanned) ║ `POST /api/pairing/complete` with
    `Authorization: Bearer` ║ `completePairing`, one transaction: match the claim to the
    session user and Mac key, upsert the Mac, link both in `device_links`, burn the claim,
    return the phone and proof ║ agent checks the proof (`verifiedPhone`); a mismatch refuses
    the pairing. Saves the phone and session in `identity.bin` (`safeStorage`)
-7. Phone saves the Mac (key, name, addresses) in SecureStore and returns home
+8. Phone saves the Mac (key, name, addresses) in SecureStore and returns home
 
 ## Phone connects to Mac (LAN)
 

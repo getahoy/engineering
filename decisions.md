@@ -4,6 +4,30 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-03 — Hiding the window pauses the pairing code instead of discarding it
+
+A hidden window or popover aborts polling but keeps a ready code; showing again reuses it
+when it has 30 s left (no spinner, no fade), else makes a new one. An approval that lands
+mid-pause still completes. Rejected: stop on hide (every reopen showed "Making a code…" and
+asked the server again). Reverse: call `stop()` instead of `pause()` in `surfacePairing`.
+
+## 2026-11-03 — Pairing code is a pure state machine; QR drawn from qrcode-generator
+
+`core/pairing/pairingCode.ts` maps events (issued, missed, due, online, approved) to the next
+status and effect; `PairingSession` only performs effects, so retry, refresh, offline and
+scanned are unit-tested. The QR is our own SVG from `qrcode-generator` (react-qrcode-logo's
+own engine) because the 9×9-module pennant square needs the module count, which
+react-qrcode-logo hides. Rejected: react-qrcode-logo `logoImage` (logo size in pixels, not
+modules). Reverse: put react-qrcode-logo back in `QrCode`.
+
+## 2026-11-03 — The shell, not the pair screen, decides when a pairing code runs
+
+`surfacePairing` is the only owner: it starts the session whenever a surface is visible and
+`needsPairingCode` holds, and stops it when the window and popover are both hidden, so a
+fresh code is requested the moment a phone ends the pairing and no key refreshes unseen.
+Rejected: renderer mount/unmount as a second owner (navigating away aborted a slow first
+request; a minimised window kept refreshing). Reverse: restore `usePairingSession` from git.
+
 ## 2026-11-02 — "Ended" eyebrow time is when this device found out
 
 The server's links reply has no end time, so U1/U2 show the age since this device learned of

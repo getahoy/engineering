@@ -15,7 +15,7 @@ boundary.
 | web | `src/app/page.tsx` | Landing page at `/` (static), `features/landing/screens/landingScreen.tsx` |
 | web | `src/app/api/waitlist/route.ts` | Early-access signup from the landing page capsules |
 | web | `scripts/evalInterpret.ts` (`pnpm eval:interpret`) | Manual run of the cases in `scripts/interpretCases.ts` against the interpret route, checked automatically, with a pass/fail table |
-| mobile | `src/app/_layout.tsx` | Expo Router stack, session guards, `getRandomValues` polyfill |
+| mobile | `src/app/_layout.tsx` | Reinstall wipe, then `features/auth/components/sessionRoot.tsx` (launch gate, Expo Router stack, session guards); `getRandomValues` polyfill |
 | mobile | `src/app/pair.tsx` | QR scanner and pairing claim |
 | agent | `src/main.ts` | Electron main process, composition root |
 | agent | `src/renderer/main.tsx` | One renderer bundle; `?surface=window` main window, `popover` menu bar popover, `gallery` dev-only component gallery |
@@ -36,7 +36,31 @@ boundary.
 1. `app/sign-in.tsx` → `screens/signInScreen.tsx` → `useCredentialsForm` (`@getahoy/lib`)
 2. `authClient.signIn.email` (expo client, SecureStore cookie) ║ HTTP to `EXPO_PUBLIC_API_URL` ║
    web Better Auth
-3. Session signal → `_layout.tsx` `Stack.Protected` guard flips → `index.tsx` account
+3. Session signal → `sessionRoot.tsx` `Stack.Protected` guard flips → `index.tsx` account
+
+## Cold launch (mobile)
+
+1. `app/_layout.tsx` → `useInstallWipe` (MMKV `ahoy.install`/`installSeen`; missing →
+   `client/wipeAuthStorage.ts` ║ SecureStore ║ writes `{}` to `ahoy_cookie` and
+   `ahoy_session_data`). Native splash stays up; nothing below mounts until this settles.
+2. `components/sessionRoot.tsx` → `hooks/useSessionGate.ts`:
+   - `useLaunchCookie` → `authClient.getCookie()` ║ SecureStore ║ → `launchCookie.ts`
+     (`present` / `absent` / `unreadable`)
+   - `authClient.useSession()` → expo plugin `init` hydrates the cached session ║ SecureStore ║
+     then `/api/auth/get-session` ║ HTTP ║ web Better Auth (keeps running in the background)
+   - `sessionGate.ts` `sessionReady`: cache + cookie, or no cookie, or a server answer
+     (data, null, or 401), or the 6 s give-up → `ready` (sticky). SigningIn only after
+     `SPLASH_LIMIT_MS` (`hooks/useSplashHold.ts`).
+3. Ready + signed in → `welcome/hooks/useLaunchIntro.ts` latches in render →
+   `LaunchIntro` over Home; `pairing/hooks/usePairedMacs.ts` →
+   `sync/preparePairings.ts` (once per latest user: `claimPairingsFor`) → settle → read
+   ║ SecureStore ║ → dialling starts; `useLinkSync` settles revoked Macs alongside ║ HTTP ║
+   and reloads the list.
+4. Ready + signed out → splash fades into `welcome`.
+5. `hooks/useClearStaleSession.ts`: a later 401 on `/get-session` →
+   `client/signOutOnce.ts` (once per cookie), or a cached session with no stored cookie →
+   `authClient.signOut()`; either clears the cached session → `Stack.Protected` fades to
+   `welcome`.
 
 ## Sign in with Google
 
@@ -151,9 +175,14 @@ boundary.
    else `welcome`
 4. Phone sends an encrypted `ready`; the Mac counts it connected, sends `status { locked }`
    and repeats it on every lock change
-5. Timeout or close before a reply → phone `unreachable`, auto-retry every 5 s in the
-   foreground. Only a signed refusal ends the pairing: `sync/endedMacs.ts` removes the
-   Mac and saves the one-time notice
+5. Timeout or close before a reply → phone `unreachable`, auto-retry in the foreground at
+   300 ms, 1 s, 2 s, then every 5 s (`connection/linkTiming.ts`; off/asleep/quit wait 5 s).
+   Only a signed refusal ends the pairing: `sync/endedMacs.ts` removes the Mac and saves
+   the one-time notice
+6. Background: the session stays open 20 s, then closes. Foreground: `resumeLink` pings
+   the open session (500 ms); a pong keeps it, silence or no session redials. Device keys
+   stay in memory after the first SecureStore read. Dev builds log per-stage dial timing
+   (`connection/dialMac.ts`, `macLink.timing`)
 
 ## Permissions (mobile)
 
@@ -202,8 +231,10 @@ boundary.
 
 1. Hold the button: `pairing/screens/macsHomeScreen.tsx` → `talk/hooks/useTalk.ts` →
    `talk/sending/talkFlow.ts` `press` → `talk/recorder/useFileRecorder.ts` (expo-audio, mono
-   AAC m4a, stops at 30 s). The target Mac comes from `talk/hooks/useTalkTarget.ts`, which
-   reads each card's state from `LiveMacLinks`
+   AAC m4a, stops at 30 s). The target Mac comes from `talk/hooks/useTalkTarget.ts`;
+   `pairing/components/macHome.tsx` reads one steady link state for the chip and the talk
+   block (`talk/talkBlock.ts`: connecting never blocks). If the link is still dialling,
+   `talk/sending/askMac.ts` waits for it (`waitForSession`, 5 s, "Check your Mac" at 3 s)
 2. Release: `talkFlow.ts` → `talk/client/transcribeApi.ts` (multipart with `expo/fetch`,
    session cookie) ║ HTTPS ║ `app/api/transcribe/route.ts`: session, 20/min rate limit,
    `features/speech/server/readAudio.ts` (2 MB cap) → `transcribeAudio.ts`

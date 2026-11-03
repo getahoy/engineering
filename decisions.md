@@ -4,6 +4,42 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-04 — The launch wordmark is the splash PNG, held 1 s from JS start
+
+`Wordmark` renders `splashWordmark(Dark)` at the splash `imageWidth`, centred on the full
+screen, so the native splash is cut (no fade) to an identical frame and LaunchIntro, Welcome
+and SigningIn all show one Ahoy. The reveal waits until 1 s after JS start
+(`welcome/launchTiming.ts`), never longer for the server. Rejected: Fraunces text at 52 px
+(a second, smaller Ahoy crossfaded under the splash). Reverse: render the text in `Wordmark`
+and restore the splash fade. `imageWidth` in `app.config.ts` and `--spacing-splash-mark-x`
+must stay equal.
+
+## 2026-11-04 — Connecting never blocks talking; background keeps the session 20 s
+
+Talk is blocked only by hard link states (paused, locked, off, asleep, quit, settled
+unreachable, unrecognised, version mismatch); while connecting, recording starts and the
+send waits up to 5 s for the link. Backgrounding keeps the Noise session 20 s and foreground
+pings it (500 ms) instead of always redialling. Rejected: blocking on connecting (talk was
+disabled for 1–2 s after every unlock behind a green chip). Reverse: map `connecting` to
+`noMac` in `talkBlockOf` and call `stop()` in `MacConnection.background`.
+
+## 2026-11-04 — The reinstall marker `ahoy.install` / `installSeen` is never renamed
+
+The iOS Keychain survives an uninstall, so a missing MMKV flag means a new install and the
+better-auth cookie and session cache are wiped before the session loads. The flag is set even
+when the wipe fails. Renaming the MMKV instance or key would make every existing install look
+new and sign everyone out once. Reverse: only by adding a second marker alongside, never by
+renaming.
+
+## 2026-11-04 — Cold launch trusts the cached session plus the stored cookie
+
+The launch gate opens as soon as the expo plugin has hydrated a cached session and
+`getCookie()` is non-empty, or at once when the cookie is empty; `/get-session` keeps running
+in the background and a 401 signs out. A failed check without a session (offline, 5xx,
+unreadable Keychain) is not treated as signed out; it waits for the 6 s give-up. Rejected:
+waiting for `/get-session` (SigningIn flashed under the splash on every launch). Reverse:
+make `sessionReady` require `!isPending`.
+
 ## 2026-11-03 — Hiding the window pauses the pairing code instead of discarding it
 
 A hidden window or popover aborts polling but keeps a ready code; showing again reuses it

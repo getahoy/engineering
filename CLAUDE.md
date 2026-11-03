@@ -275,6 +275,10 @@ Too large or repetitive for Edit means the file should be split, not scripted.
   Apple Development certificate, which keeps permissions stable across rebuilds on this Mac
   but cannot be notarized. Needs a Developer ID Application certificate (Apple Developer
   Program): switch `osxSign` to that identity, add notarization to `forge.config.mts`.
+- **Contacts lookup for email drafts (later step).** "Email Samar" opens a draft with an
+  empty To. Plan in `engineering/contacts-lookup-plan.md`: interpreter returns a name, the
+  helper looks it up in macOS Contacts, one → fill, several → "Which one?", none → empty To
+  plus a spoken line. Contacts never leave the Mac. Needs a seventh helper verb.
 
 **Everything is real.** No mocks of our own apps, no fake agent, no stub to replace later.
 If a feature needs phone and Mac, build both halves in it. Empty and correct beats full and

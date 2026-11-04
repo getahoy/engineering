@@ -21,6 +21,9 @@ haptics, Android back button.
 - [ ] Tests for the riskiest untested areas: auth (session gate, launch probe, install
       wipe), welcome timeline, settings. Auth has 28 files and 0 tests.
 - [ ] Remove the four copied `fetchWithOwnCookie` helpers (done by Phase 2's authedFetch)
+- [ ] Backgrounding during a send drops the command: useTalk calls flow.interrupt() when
+      the app leaves active, so Android back on Home (or any app switch) while "sending"
+      cancels a command the Mac may already be running. Only interrupt while recording.
 - [ ] Large text (Dynamic Type): check Home, Settings, Pair and the sheets at the largest
       sizes; font scaling is capped in places (carousel `NO_FONT_SCALING`)
 
@@ -53,11 +56,4 @@ haptics, Android back button.
 
 ## Future
 
-- [ ] Talk without opening the app: Action Button, Control Center button, Lock Screen
-      widget, Siri Shortcut ("Ask Ahoy"), Home Screen quick action ("Talk to my Mac")
-- [ ] Streaming transcription (ElevenLabs scribe_v2_realtime): words appear while speaking
-- [ ] Contacts lookup for email drafts (plan: contacts-lookup-plan.md)
-- [ ] Hindi / Hinglish (copy already lives in copy/*.ts files)
-- [ ] More voices and a speaking-speed setting
-- [ ] Apple Watch hold to talk
-- [ ] iPad support (iPhone only today)
+Moved to mobile-future-enhancements.md.

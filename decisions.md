@@ -4,6 +4,24 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-05 — Phone pairing entries are Keychain ThisDeviceOnly
+
+`pairingKeychain` writes `ahoy.device.keys`, `ahoy.paired.macs`, `ahoy.pairing.owner` and
+`ahoy.pending.unlinks` with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`, so a backup or iPhone
+migration never carries the private key; the new phone shows Pair your Mac and re-pairing
+takes the replaced path. Old entries are rewritten once (MMKV `ahoy.pairingKeychain`), every
+pairing call waits for that, a failed read retries next launch. Backups made before this
+build still restore the key. The auth cookie keeps the default class so sign-in migrates.
+Rejected: deleting and re-adding entries (data loss on a crash). Reverse: drop the option.
+
+## 2026-11-05 — Pace kept at 0.9 with 0.3 s breaks after on-device listening; a and b tried
+
+Closes the s85 vs s80commas pace test. `pnpm voice:samples --candidates` rendered the preview
+line at (a) speed 1.0, no breaks and (b) 0.95, 0.15 s breaks against (c) the current pace;
+c sounded best on device despite 30-43% silence. Mobile `speechKey` now carries a pace tag,
+so a future pace change never replays cached audio. Reverse: pick a or b in `speechVoices.ts`
+and bump `SPEECH_PACE` in `speechCache.ts` in the same change.
+
 ## 2026-11-05 — Speech is paced: speed 0.9 and a 0.3 s break between sentences
 
 Flash v2.5 at speed 1.0 read short replies near 195 words a minute. `speechVoices.ts` sets

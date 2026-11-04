@@ -302,6 +302,15 @@ boundary.
    bearer → temp file → `afplay` ║ process ║; failure → `say` (argument list)
 6. Press talk: phone `talkFlow.press` → voice stop (80 ms fade) → `speech.stop` and
    `choice.extend` ║ LAN ║ Mac `commandReceiver.ts` (only from the owning session)
+7. Voice preview: Settings → `voice/components/voiceSheets.tsx` → `previewPill.tsx` →
+   `hooks/useVoicePreview.ts` → `engine/voicePreview.ts` (`previewState.ts`) →
+   `engine/previewAudio.ts` → `previewSource.ts`: `speechCache.ts`, else the bundled
+   `assets/voice-samples/<voice>.mp3` while `manifest.json` matches, else `prepareSpeech`
+   ║ HTTPS ║ `/api/speak`, else `deviceVoice.ts` → `engine/previewPlayer.ts` (expo-audio).
+   Talk losing focus stops any reply first (`useVoiceReplies.ts`)
+8. Samples are built offline: web `scripts/buildVoiceSamples.ts` (`pnpm voice:samples`) →
+   `features/speech/server/speechVoices.ts` (model, format, voice id) ║ HTTPS ║ ElevenLabs
+   → `mobile/assets/voice-samples/`
 
 ## Spoken choice (mobile ⇄ agent)
 

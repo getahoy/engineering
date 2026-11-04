@@ -4,6 +4,25 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-05 — Speech is paced: speed 0.9 and a 0.3 s break between sentences
+
+Flash v2.5 at speed 1.0 read short replies near 195 words a minute. `speechVoices.ts` sets
+`voiceSettings.speed` 0.9 and `pacedText` adds `<break time="0.3s" />` after `.`, `!`, `?`
+for `/api/speak` and the sample script alike, so phone, Mac, landing and previews match.
+Rejected: switching to multilingual v2 (slower first audio). Phones keep cached audio
+of a line until evicted, since the cache key has no pace. Reverse: drop both in one file.
+
+## 2026-11-05 — Voice previews ship as bundled clips, checked by voice id and line
+
+`mobile/assets/voice-samples/` holds one MP3 per voice plus `manifest.json`
+(`voice, voiceId, text, generatedAt`), built by web `pnpm voice:samples` in the replies'
+format (`mp3_22050_32`, not 64 kbps, so a preview sounds like a real reply). The phone plays
+a clip only while its voice id and `voiceCopy.previewLine` match; an unknown id (never
+fetched) trusts the clip. Re-run the script when a server voice id or `previewLine` changes,
+and keep the script's `PREVIEW_LINE` equal to `previewLine`; until then previews fetch once
+and cache. Rejected: fetching on first tap (silent offline).
+Reverse: delete the folder and `bundledSamples.ts`; the chooser falls to fetch.
+
 ## 2026-11-04 — The launch wordmark is the splash PNG, held 1 s from JS start
 
 `Wordmark` renders `splashWordmark(Dark)` at the splash `imageWidth`, centred on the full

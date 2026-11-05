@@ -4,6 +4,16 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-06 — Off refuses, it doesn't go deaf
+
+"Listen for my phone" off keeps the LAN listener running. A paired phone's handshake
+completes; on its `ready` the Mac checks listening, sends `goodbye turned_off` and closes;
+no command is accepted. The phone counts itself connected
+only on the Mac's first `status`, so a refusal never flashes Connected, and keeps the
+reason per Mac in MMKV so a relaunch still says "turned off". Off can carry an expiry
+(`lanOffUntil`). Rejected: stopping the listener (phone sees Can't reach), a new handshake
+reply (needs a protocol change). Reverse: stop the listener in `ListenSwitch.turnOff`.
+
 ## 2026-11-05 — Phone pairing entries are Keychain ThisDeviceOnly
 
 `pairingKeychain` writes `ahoy.device.keys`, `ahoy.paired.macs`, `ahoy.pairing.owner` and

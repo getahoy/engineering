@@ -24,3 +24,6 @@ Status is `open`, or `fixed in <repo> <commit>`.
 | 15 | 2026-10-29 | Code review: "click Send" where a text label and the Send button both match | Click the button | Asked to pick between them: a plain label counted as much as a button | fixed in agent 686a29f; check 7.39 |
 | 16 | 2026-10-29 | Code review: "click the close button" on a window | The window's close button | Not found, and unnamed buttons showed as blank choices: window buttons only have a subrole | fixed in agent 686a29f; check 7.40 |
 | 11 | 2026-10-28 | Reloaded the phone app | Know which JavaScript is running | No way to tell an old bundle from a new one | fixed in mobile 4e7613f (dev build stamp); check 6.27 |
+| 17 | 2026-11-06 | Turned "Listen for my phone" off, then opened the phone | "Ahoy is turned off" | "Can't reach": with listening off the Mac ran no listener, so only a phone connected at that moment got the goodbye | fixed in agent 18630ff |
+| 18 | 2026-11-06 | Turned listening off, quit and reopened the phone app | "Ahoy is turned off" | "Can't reach": the phone kept the goodbye reason in memory only | fixed in mobile 674e1b5 |
+| 19 | 2026-11-06 | Looked at the Mac window with listening off | Says Ahoy is off, with a way to turn it on | Home showed "Now say something on your phone" and only a small "iPhone · Off" in the sidebar | fixed in agent 2bc6039 |

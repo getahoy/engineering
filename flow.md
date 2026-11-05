@@ -166,15 +166,20 @@ boundary.
 ## Phone connects to Mac (LAN)
 
 1. Agent `PhoneLink` → `LanListener` binds 127.0.0.1 + each private LAN IPv4 on 7421,
-   re-syncing addresses every 5 s, at most 20 handshakes per minute per address
+   re-syncing addresses every 5 s, at most 20 handshakes per minute per address. It runs
+   whether or not "Listen for my phone" is on
 2. Phone `LiveMacCard` → `useMacConnection` → `MacConnection` → `connectToMac` →
    `lanTransport` races the saved addresses ║ WebSocket on Wi-Fi ║ `WebSocketFrameStream`
 3. Noise IK message 1 carries the phone hello ║ agent `PhoneSession` → `acceptHandshake`:
    undecryptable → plaintext `unknown_mac_key`; unknown key → signed `not_paired` with the
    tombstone reason or `unknown` (payload never parsed); other version → `version_mismatch`;
    else `welcome`
-4. Phone sends an encrypted `ready`; the Mac counts it connected, sends `status { locked }`
-   and repeats it on every lock change
+4. Phone sends an encrypted `ready`; `PhoneSession` checks listening then, not at hello,
+   so a switch flipped mid-handshake applies. Listening on: the Mac counts it connected, sends
+   `status { locked }` and repeats it on every lock change. Listening off: the Mac sends
+   `goodbye turned_off`, closes, and `ListenSwitch` (`shell/lan/listenSwitch.ts`) shows
+   "Your iPhone tried to connect" at most once per 10 min. The phone counts itself connected
+   and registers the live session only on the first `status`
 5. Timeout or close before a reply → phone `unreachable`, auto-retry in the foreground at
    300 ms, 1 s, 2 s, then every 5 s (`connection/linkTiming.ts`; off/asleep/quit wait 5 s).
    Only a signed refusal ends the pairing: `sync/endedMacs.ts` removes the Mac and saves
@@ -224,8 +229,12 @@ boundary.
    `useLinkSync` (start, foreground) read `/api/pairing/links` and treat a revoked link like
    the goodbye. A later handshake gets the signed `not_paired` from the Mac's tombstone
 4. Pause: phone `goodbye paused` + stored `paused`; Mac shows "paused". Ahoy off, quit and
-   sleep send `turned_off`, `quitting`, `sleeping`; the phone keeps that reason while it
-   retries
+   sleep send `turned_off`, `quitting`, `sleeping`; the phone keeps that reason per Mac in
+   MMKV `ahoy.macGoodbyes` (`connection/macLinkMemory.ts`), shows it on launch and on every
+   miss instead of Can't reach, and clears it on the next `status`. Turning off from the Mac
+   stores `lanOffUntil` (1 hour, next 08:00, or none) in settings; `ListenSwitch` turns
+   listening back on once it passes (checked at start and every 30 s). Completing a pairing
+   turns listening on
 
 ## Talk (mobile ⇄ web ⇄ agent)
 

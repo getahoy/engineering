@@ -18,6 +18,11 @@ haptics, Android back button.
 
 ## Bugs and risks in the code
 
+- [ ] **"Can't reach" after the Mac's IP changes (top priority).** The phone saves the
+      Mac's LAN addresses once, from the QR at pairing, and never updates them; the Mac gets
+      a new IP from the router (new day, restart) and the phone dials the old one.
+      Workaround: remove and re-pair. Fix: .local hostname, Bonjour discovery (_ahoy._tcp,
+      matched by key fingerprint), and refreshing addresses after every handshake.
 - [ ] Tests for the riskiest untested areas: auth (session gate, launch probe, install
       wipe), welcome timeline, settings. Auth has 28 files and 0 tests.
 - [ ] Remove the four copied `fetchWithOwnCookie` helpers (done by Phase 2's authedFetch)

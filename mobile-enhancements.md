@@ -12,8 +12,6 @@ haptics, Android back button.
 - [ ] Phase 2 of the launch/session plan: authedFetch with single-flight 401 recovery,
       renew-on-use, user switch, saved Mac list schemaVersion + per-entry parse + write
       queue. Keep `betterAuthPin.test.ts` and the 401 guard test.
-- [ ] Reconnect speed: step-0 stage timings, then decide on native crypto for the Noise
-      handshake (lives in shared/, ask first)
 - [ ] Launch polish check on device: one Ahoy, held ~1 s (commit c64af23)
 
 ## Bugs and risks in the code
@@ -53,8 +51,12 @@ haptics, Android back button.
 - [ ] Sign in with Apple (Google is offered, so Apple requires an equivalent)
 - [ ] Delete account in the app (App Store rule)
 - [ ] First-run onboarding: hold to talk, pairing, and the cloud disclosure (ElevenLabs
-      hears the voice, Anthropic reads the words), required by decisions.md 2026-10-28
-- [ ] History screen (designed: `history` / `historyOpen` in design/Ahoy iPhone.dc.html)
+      hears the voice, Anthropic reads the words), required by decisions.md 2026-10-28.
+      The disclosure carries the history line: "Ahoy keeps a history of what you said and
+      what it did in your account for 90 days. You can clear it or turn it off in
+      Settings." Speech audio is never stored.
+- [ ] Privacy policy page (none exists yet): include the same history line
+- [x] History screen (Settings → History)
 - [ ] Crash reporting (Sentry for Expo), transcripts and labels redacted
 - [ ] EAS build + TestFlight + over-the-air updates (`expo-updates`); no eas.json yet
 - [ ] iOS privacy manifest (`ios.privacyManifests`) and App Privacy labels

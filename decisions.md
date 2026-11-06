@@ -4,6 +4,61 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-07 — Run again goes through Home on the phone, runs locally on the Mac
+
+Phone: the entry screen selects its Mac and hands the words to Home in the route; Home's
+`TalkFlow.runText` sends them, so replies, questions back and the history entry work as
+for speech. Mac: the main process runs the words through `CommandReceiver` with its own
+owner and `speakOn: off`, and shows the result as a toast; it is not written to history
+(the phone writes history). Rejected: sending from the History screen (no choice sheet).
+Reverse: a Mac-side history write with the paired phone's key.
+
+## 2026-11-07 — The phone outbox keeps settled entries and cancels the unfinished on launch
+
+MMKV `ahoy.history` holds `{ entry, sentRev }` per thread. Every change bumps `rev`; a flush
+sends pending entries 20 at a time and marks the revision sent. The newest 50 settled
+entries stay so a retried command (same id) writes a newer revision. Running entries left
+by a dead app become cancelled on the next launch. Rejected: deleting on send (a retry
+would restart at rev 1 and the server would ignore it). Reverse: drop the outbox module.
+
+## 2026-11-07 — command.result carries app, via, onMacMs and reason
+
+All optional in `@getahoy/protocol`; old phones ignore them, old Macs omit them. The Mac
+sets the closed reason where the failure happens (`because(outcome, reason)`), falls back
+to `other`, names the front app for screen commands and times receipt to result. The enums
+moved into `command.ts` because `historyApi.ts` imports it. Reverse: stop sending them.
+
+## 2026-11-07 — The Mac reads history through the main process, pinned to its own key
+
+The window never holds the session token: `history:*` IPC calls go to main, which adds the
+bearer and sets `macKey` to this Mac's public key on every list call. Preload parses each
+reply. Rejected: renderer fetch (token in the renderer). Reverse: drop `historyIpc.ts`.
+
+## 2026-11-07 — History search travels in a POST body
+
+`GET /api/history` takes cursor, status and macKey; search text goes to
+`POST /api/history/search` with the same `historyQuerySchema`. Request URLs land in the Next
+dev log and Vercel's access log, and search text is what the user said. Rejected: `?q=` as
+the plan had it (measured: the dev log printed it). Reverse: accept `q` on GET again.
+
+## 2026-11-07 — Retention is a daily Vercel Cron behind CRON_SECRET
+
+`/api/history/retention` (04:00 UTC, `web/vercel.json`) deletes rows started over 90 days ago
+and soft deletes older than one minute; it answers 401 unless `Authorization` is exactly
+`Bearer ${CRON_SECRET}`. Soft-deleted rows stay hidden but can sit up to a day before the
+purge. Rejected: purging on each request (inactive accounts never purge), Neon `pg_cron`
+(scale-to-zero). Reverse: drop the cron entry and the route.
+
+## 2026-11-07 — Command history is the account's, written by the phone, keyed by revision
+
+`command_history` rows belong to the user, not a device; Remove, re-pair and Mac sign-out
+keep them. The phone writes, since every command starts there. Writes name devices by
+public key (the phone never learns device uuids); the server stores the keys beside the
+FKs, preferring the active device row, else the newest revoked one, and filters by
+`mac_key` so history survives a re-pair. Each write carries `rev`; the upsert applies only
+when it is newer and the row is the caller's. Rejected: per-device local history (lost on
+reinstall), device uuids on the phone. Reverse: a migration back to device-scoped rows.
+
 ## 2026-11-06 — Off refuses, it doesn't go deaf
 
 "Listen for my phone" off keeps the LAN listener running. A paired phone's handshake

@@ -14,6 +14,8 @@ boundary.
 | web | `src/app/api/interpret/route.ts` | Smart commands: text to up to 3 actions, called by the Mac |
 | web | `src/app/page.tsx` | Landing page at `/` (static), `features/landing/screens/landingScreen.tsx` |
 | web | `src/app/api/waitlist/route.ts` | Early-access signup from the landing page capsules |
+| web | `src/app/api/history/**/route.ts` | Command history: list (GET), write batch (POST), search (POST `/search`), clear (DELETE), `[id]` delete / restore / report, settings; logic in `features/history/server/` |
+| web | `src/app/api/history/retention/route.ts` | Daily Vercel Cron (`vercel.json`), `Bearer CRON_SECRET` only; purges history over 90 days and stale soft deletes |
 | web | `scripts/evalInterpret.ts` (`pnpm eval:interpret`) | Manual run of the cases in `scripts/interpretCases.ts` against the interpret route, checked automatically, with a pass/fail table |
 | mobile | `src/app/_layout.tsx` | Reinstall wipe, then `features/auth/components/sessionRoot.tsx` (launch gate, Expo Router stack, session guards); `getRandomValues` polyfill |
 | mobile | `src/app/pair.tsx` | QR scanner and pairing claim |
@@ -273,6 +275,27 @@ boundary.
    No `command.received` in 5 s → "Can't reach"; no result 15 s after it → "No answer".
    Try again resends the same `commandId`, or re-uploads the same file if transcription
    failed
+
+## History (mobile ⇄ web, agent ⇄ web)
+
+1. The result frame also carries `app`, `via`, `onMacMs` and `reason`
+   (`agent/src/shell/commands/resultFrame.ts`, reason from `core/commands/outcomeDetails.ts`)
+2. Phone writes: `talk/components/talkPanel.tsx` → `history/hooks/useHistoryWriter.ts` watches
+   the talk states → `history/historyTracker.ts` → `historyRecords.ts` (status mapping,
+   follow-ups, timings) → MMKV outbox (`history/storage/historyStore.ts`) →
+   `history/sync/flushHistory.ts` on write, foreground and reconnect ║ HTTPS ║
+   `POST /api/history` → `features/history/server/writeHistory.ts` (rev-guarded upsert)
+3. Phone reads: Settings → History (`app/history/index.tsx`) → `history/hooks/useHistoryList.ts`
+   (MMKV cache first) ║ HTTPS ║ `GET /api/history` or `POST /api/history/search` →
+   `listHistory.ts`; unsent outbox entries are merged in by `history/localEntries.ts`
+4. Mac reads: window History item → `renderer/history/useHistoryList.ts` → `window.ahoy` ║ IPC ║
+   `shell/history/historyIpc.ts` → `historyApi.ts` (bearer, `macKey` = this Mac) ║ HTTPS ║ web
+5. Run again: phone entry → `history/hooks/useRunAgain.ts` selects the Mac and goes Home with
+   the words → `talk/hooks/useRunAgainOnArrival.ts` → `talkFlow.runText` (step 3 of Talk).
+   Mac entry ║ IPC ║ `shell/history/runLocally.ts` → `CommandReceiver`, silent, not recorded
+6. Report: entry → report sheet or dialog ║ HTTPS / IPC ║ `POST /api/history/:id/report` →
+   `reportProblem.ts` copies the stored entry into `problem_reports`
+7. Retention: Vercel Cron ║ HTTPS ║ `GET /api/history/retention` (`Bearer CRON_SECRET`)
 
 ## Click and choose (mobile ⇄ agent ⇄ helper)
 

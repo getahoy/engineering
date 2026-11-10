@@ -4,6 +4,33 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-10 — Phone launch has no veil; the splash already switches to the choice
+
+Reverses the launch half of "Phone appearance crossfade is a veil of the previous canvas".
+`Uniwind.setTheme` at module load calls `Appearance.setColorScheme`, and iOS repaints the
+native splash in the chosen theme at once, so a veil in the system theme flashed the wrong
+colour over it. The native root background now follows the theme through `expo-system-ui`.
+Rejected: keeping the veil (no frame shows the system theme after JS starts). Reverse:
+bring back `launchVeil.tsx` if a platform keeps the splash in the system theme.
+
+## 2026-11-10 — Mac appearance: settings.json is the one choice, nativeTheme drives the rest
+
+`appearance` lives in `settings.json`; main sets `nativeTheme.themeSource` before windows
+exist, so `prefers-color-scheme` and the `light-dark()` tokens are right on the first paint.
+next-themes (class + inline `color-scheme`) runs in the renderer; its localStorage copy is
+overwritten from main on every load. The switch sets `themeSource` first and waits for the
+media query before `setTheme`, or System would resolve from the old value. Rejected:
+next-themes as the store (main could not read it before windows). Reverse: drop
+next-themes and let `themeSource` alone theme the renderer.
+
+## 2026-11-10 — Phone appearance crossfade is a veil of the previous canvas
+
+`Uniwind.setTheme` re-themes in one render; a full-screen veil in the old canvas colour is
+mounted in that same render and fades out over 240 ms. Launch uses the same veil with the
+splash wordmark when the stored choice differs from the system. Rejected: a snapshot
+crossfade (needs a native view-shot module). Reverse: remove `appearanceFade.tsx` and
+`launchVeil.tsx`; the switch becomes instant.
+
 ## 2026-11-07 — Run again goes through Home on the phone, runs locally on the Mac
 
 Phone: the entry screen selects its Mac and hands the words to Home in the route; Home's

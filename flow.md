@@ -111,6 +111,34 @@ boundary.
    code started while the popover was open survives the switch. Right click
    → native menu (Open Ahoy, Quit Ahoy, Component gallery in dev)
 
+## Appearance (agent)
+
+1. Startup: `shell/settingsStore.ts` reads `appearance` (`system` default) →
+   `shell/shellSurfaces.ts` sets `nativeTheme.themeSource` before any
+   window exists, so window backgrounds, popover material and `prefers-color-scheme` match
+2. Renderer load: `preload.ts` ║ sync IPC `agent:appearance` ║ `shell/appearanceIpc.ts` →
+   `initialAppearance`; `renderer/main.tsx` seeds next-themes' localStorage copy from it,
+   then `appearance/appearanceProvider.tsx` (next-themes, class + inline `color-scheme`)
+3. Settings › Appearance (`appearance/appearanceGroup.tsx`): ring moves at once; 60 ms later
+   `useAppearanceSwitch` → `document.startViewTransition` → ║ IPC `agent:change-appearance` ║
+   `themeSource` set, `settings.json` written, resolved theme returned → `schemeSettled`
+   waits for `prefers-color-scheme` → `flushSync(setTheme)`; 240 ms crossfade
+4. Popover: next-themes' `storage` event (same origin) plus the new `themeSource`
+
+## Appearance (mobile)
+
+1. `app/_layout.tsx` imports `appearance/applyStoredAppearance.ts` first: reads the system
+   scheme, then MMKV `ahoy.appearance` → `Uniwind.setTheme` (which also sets
+   `Appearance.setColorScheme`) before the first render
+2. Launch: setting the theme also overrides the native appearance, so iOS repaints the
+   splash in the chosen theme straight away; `hooks/useRootBackground.ts` in
+   `sessionRoot.tsx` sets the native root background (`expo-system-ui`) to the themed
+   Sailcloth on launch and on every change, behind modals, sheets and the keyboard
+3. Settings › Appearance (`components/appearanceGroup.tsx`): selection haptic, radio and ring
+   move at once; 60 ms later `useAppearance().setTheme` writes MMKV and sets Uniwind;
+   `components/appearanceFade.tsx` in `sessionRoot.tsx` sees the theme change in render and
+   fades the previous canvas out over 240 ms (any theme change, including System at night)
+
 ## API request (any web route)
 
 1. `apiRoute(scope, work)` gives the request a UUID in `AsyncLocalStorage`

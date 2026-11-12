@@ -82,7 +82,7 @@ these rules (`!`, comments).
 
 ## Working loop
 
-- **Git:** follow the Git flow section below exactly. Never push to `main`.
+- **Git:** follow the Git flow section below exactly.
 - One feature per session. Build it completely, then stop. Never start the next one.
 - A feature is done at its exit criterion in the table below. Not before, not beyond.
 - Too big? Split it, finish the first half, stop.
@@ -98,9 +98,6 @@ these rules (`!`, comments).
 
 **Ask the user before every commit, in every repo.** Show what will be committed and wait
 for a yes. Approval for one commit does not cover the next.
-
-Never push to `main`. Not after a rebase, not for a one-line fix, not because the change is
-obviously safe.
 
 **Never create a branch on your own.** The user says when to branch. Until told, stay on the
 current branch.
@@ -202,7 +199,6 @@ When a reviewer misses something the user catches, add the rule to that agent's 
 - Git hooks, committed in every repo under `.githooks/` **with the executable bit set**
   (`chmod +x` before the first commit; git tracks the mode):
   - `commit-msg` validates the final message, however it was produced.
-  - `pre-push` reads the refs being pushed and blocks `main`.
 - Activation is identical in all five repos: `package.json` carries
   `"prepare": "git config core.hooksPath .githooks || true"`. `docs` and `engineering` get a
   minimal `package.json` holding only that (`"private": true` + the script). Never a manual

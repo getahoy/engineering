@@ -16,17 +16,20 @@ haptics, Android back button.
 
 ## Bugs and risks in the code
 
-- [ ] **"Can't reach" after the Mac's IP changes (top priority).** The phone saves the
+- [x] **"Can't reach" after the Mac's IP changes (top priority).** The phone saves the
       Mac's LAN addresses once, from the QR at pairing, and never updates them; the Mac gets
       a new IP from the router (new day, restart) and the phone dials the old one.
-      Workaround: remove and re-pair. Fix: .local hostname, Bonjour discovery (_ahoy._tcp,
-      matched by key fingerprint), and refreshing addresses after every handshake.
+      Fixed with the .local hostname and refreshing addresses after every handshake
+      (shared 3dc7882, agent e52f7b8, mobile ac119d3 + bb09757). Bonjour browsing
+      (_ahoy._tcp, matched by key fingerprint) still open. Device check pending.
 - [ ] Tests for the riskiest untested areas: auth (session gate, launch probe, install
       wipe), welcome timeline, settings. Auth has 28 files and 0 tests.
 - [ ] Remove the four copied `fetchWithOwnCookie` helpers (done by Phase 2's authedFetch)
-- [ ] Backgrounding during a send drops the command: useTalk calls flow.interrupt() when
-      the app leaves active, so Android back on Home (or any app switch) while "sending"
-      cancels a command the Mac may already be running. Only interrupt while recording.
+- [x] Backgrounding during a send loses the result: interrupt() only cancels while
+      recording, but iOS closes the socket in the background while the Mac still runs the
+      command, so the phone showed "No answer" and History marked a command that worked as
+      failed. Fixed with command.lookup on return (shared aebcbb5, agent 92ba9e9, mobile
+      a125f7f + f938593). Device check pending.
 - [ ] Large text (Dynamic Type): check Home, Settings, Pair and the sheets at the largest
       sizes; font scaling is capped in places (carousel `NO_FONT_SCALING`)
 

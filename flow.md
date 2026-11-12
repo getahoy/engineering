@@ -199,11 +199,19 @@ boundary.
    re-syncing addresses every 5 s, at most 20 handshakes per minute per address. It runs
    whether or not "Listen for my phone" is on
 2. Phone `LiveMacCard` → `useMacConnection` → `MacConnection` → `connectToMac` →
-   `lanTransport` races the saved addresses ║ WebSocket on Wi-Fi ║ `WebSocketFrameStream`
+   `lanTransport` dials every saved IP plus `ws://<localHost>:<port>` (the Mac's Bonjour
+   name) at once ║ WebSocket on Wi-Fi ║ `WebSocketFrameStream`. Every socket that opens
+   gets its own handshake; the first welcome wins and the rest close. A stale IP that
+   answers `unknown_mac_key` does not end the try: `connectToMac` shows
+   "unrecognised" only when every answering address said so
 3. Noise IK message 1 carries the phone hello ║ agent `PhoneSession` → `acceptHandshake`:
    undecryptable → plaintext `unknown_mac_key`; unknown key → signed `not_paired` with the
    tombstone reason or `unknown` (payload never parsed); other version → `version_mismatch`;
-   else `welcome`
+   else `welcome` with the Mac hello and its current `lan { hosts, port, local }` (from
+   `LanListener.endpoint()`; `local` is `scutil --get LocalHostName` + `.local`, read by
+   the platform adapter on the 5 s sync and also put in the pairing QR as `lan.local`).
+   Phone `macAddresses.ts` `rememberLink` saves the working IP first, then the Mac's hosts, then the old
+   ones (max 8) plus the name, writing the keychain only when something changed
 4. Phone sends an encrypted `ready`; `PhoneSession` checks listening then, not at hello,
    so a switch flipped mid-handshake applies. Listening on: the Mac counts it connected, sends
    `status { locked }` and repeats it on every lock change. Listening off: the Mac sends
@@ -278,7 +286,8 @@ boundary.
    session cookie) ║ HTTPS ║ `app/api/transcribe/route.ts`: session, 20/min rate limit,
    `features/speech/server/readAudio.ts` (2 MB cap) → `transcribeAudio.ts`
    ║ HTTPS ║ ElevenLabs `scribe_v2` with keyterms → `{ text }` or `nothing_heard`
-3. The phone deletes the recording, then `talk/sending/sendCommand.ts` sends
+3. The phone deletes the recording (an upload that failed after the app left is retried
+   once on return, `transcribeOnReturn.ts`), then `talk/sending/commandExchange.ts` sends
    `command { commandId, text }` on the `MacSession` ║ LAN, Noise ║ agent
    `core/connection/phoneSession.ts` → `shell/commands/commandReceiver.ts`
 4. The receiver replies `command.received` at once, checks `core/commands/commandLog.ts`
@@ -301,6 +310,14 @@ boundary.
    invalid → "Smart commands aren't working right now"; no actions → the parser's message
 6. `command.result { status, message }` ║ LAN ║ the phone shows Heard "…" and the message.
    No `command.received` in 5 s → "Can't reach"; no result 15 s after it → "No answer".
+   These limits only run while the app is active. App in the background or the link
+   dropped: the phone stays "sending", and once a session is back it sends
+   `command.lookup { commandId }` (only to a Mac whose hello lists `commandLookup`; others
+   fail as before). The Mac answers from `commandLog`: done → `command.received` + the stored
+   result, running → `command.received` then the result when it ends, unknown →
+   `command.unknown` and nothing runs. Unknown with no earlier receipt → the phone sends the
+   same command again; with a receipt → "No answer" (the Mac restarted). Limits restart
+   from the lookup. History writes nothing until the exchange settles.
    Try again resends the same `commandId`, or re-uploads the same file if transcription
    failed
 

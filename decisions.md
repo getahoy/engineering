@@ -4,6 +4,25 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-13 — A lost link mid-command is asked about, not failed
+
+iOS closes the socket in the background while the Mac keeps running, so the phone keeps
+"sending" and on return sends `command.lookup` with the same id; the Mac answers from its
+command log and never runs anything for a lookup. Unknown before a receipt → resend (the
+log dedups), after a receipt → "No answer" (a restarted Mac could run it twice). Gated on
+the `commandLookup` hello capability, since an old Mac closes on an unknown frame.
+Rejected: blind resend (runs twice after a Mac restart). Reverse: drop the frames, settle
+on close as before.
+
+## 2026-11-13 — Phone dials every saved IP and the Bonjour name, handshakes each
+
+The Mac's IP changes with DHCP, so the phone also dials `<LocalHostName>.local` and saves
+the hosts the welcome reports. Every opened socket handshakes in parallel and the first
+welcome wins, because a stale IP may now be another device or another Ahoy Mac;
+"unrecognised" only when every answer says so. Mac stays IPv4-only. Rejected: first-open
+wins (a stale IP ends the try), Bonjour browsing (later). Reverse: drop `localHost` and
+the race in `connectToMac`.
+
 ## 2026-11-10 — Phone launch has no veil; the splash already switches to the choice
 
 Reverses the launch half of "Phone appearance crossfade is a veil of the previous canvas".

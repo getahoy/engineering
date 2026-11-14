@@ -4,6 +4,45 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-16 — A new talk press cancels the waiting command; late screen actions re-check the window
+
+New frame `command.cancel { commandId }`: the phone sends it on a press while waiting and drops
+that command's states and result; the Mac aborts the command's AbortController, stops waiting
+on the AI (the HTTP call is left to finish unused) and finishes it silently, so the queue moves
+on. An AI answer later than 4 s for click, keys, type, scroll, navigate, window or closeTab
+(`core/commands/screenActions.ts`, which also decides the blocked-app check) first checks
+`sameScreen` (pid and window frame) against the snapshot taken at the start, else "The screen
+changed, so I didn't do it." Rejected: phone-only cancel (the Mac would still act); comparing
+window titles (pages retitle themselves). Reverse: drop the frame case and `lateAnswer.ts`.
+
+## 2026-11-16 — Answer budget: Mac waits 12 s, server 11 s, email step only with 2.5 s left
+
+Drafts take two model calls and slow networks were turning answers into "Smart commands aren't
+working". Interpret writes only placeholder subject and body, capped at 300 output tokens; the
+budget is counted from the route's first line (session and rate limit reads can take seconds);
+below 2.5 s left the email step is skipped and the placeholder opens. The phone waits 17 s for
+the result, which covers the Mac's snapshot (up to about 1 s), its 12 s and the action. A Mac-side timeout is
+told apart from a dropped connection by elapsed time, not a new `RequestError` kind, so
+`shared` is unchanged for it. Reverse: the constants in `composeEmail.ts` and `interpretApi.ts`.
+
+## 2026-11-16 — Screen labels go with the AI request; Chromium page trees only while a phone listens
+
+When the rules miss, the Mac sends up to 60 control labels from the front window (labels only,
+never values or tab titles, which are page titles; nothing for blocked apps; never logged) and a click must name a label shown or
+said. Chromium browsers build the page tree only once `AXEnhancedUserInterface` is set, which
+other apps react to, so new helper verb `webPages` turns it on for browsers only while a phone
+is connected and Listen is on (at that moment, at browser launch, at activation, re-asked at
+snapshot with two 0.4 s waits). Activation during launch drops the ask, so a finished launch
+asks again. Rejected: a "send" rule; always on; `AXManualAccessibility` (Chrome ignores it).
+Reverse: stop sending `webPages`; the snapshot then sees only the browser frame.
+
+## 2026-11-16 — Shortcut hints are not part of a label; a pressable control beats a pressable group
+
+Web labels carry the shortcut ("Send (⌘Enter)" with direction marks), so matching, the labels
+sent to the AI and the phone's text drop a trailing `(⌘…)`. Chrome marks clickable web groups
+pressable, so among matches a pressable control role wins before any pressable element.
+Rejected: fuzzy prefix matching. Reverse: `withoutShortcutHint` and `preferPressable`.
+
 ## 2026-11-15 — Emails get their own writing step; the sender's first name goes to the model for the sign-off
 
 When interpret returns a draft, `composeEmail.ts` calls the model once more with a prompt that

@@ -316,18 +316,31 @@ boundary.
    `brightness` (DisplayServices through `dlopen`), the brightness keys when it is missing.
    `core/commands/levelChange.ts` clamps; `stepMemory.ts` keeps the last step 60 s for "more",
    cleared when the phone disconnects (`shell/lan/phoneLink.ts`)
-5a. When the parser has no match or no such app: `shell/interpret/interpretApi.ts` (Mac session
-   bearer, 7 s, `supports` = the kinds this Mac runs) ║ HTTPS ║ `app/api/interpret/route.ts` →
-   `features/interpret/server/interpret.ts` (model from `models.ts`) ║ HTTPS ║ Anthropic → up
-   to 3 actions → a draft's subject and body rewritten by `composeEmail.ts` (second model
-   call, `emailPrompt.ts`, sender's first name from the session, 4 s, the rough draft kept on
-   failure) → `supportedActions` (empty if any kind is unsupported) →
+5a. When the parser has no match or no such app: `shell/commands/screenControls.ts`
+   `screenAtStart` snapshots the front window ║ stdio ║ helper and keeps up to 60 control
+   labels (`core/resolver/screenLabels.ts`, none for a blocked or unknown app) →
+   `shell/interpret/interpretApi.ts` (Mac session bearer, 12 s, `supports` = the kinds this Mac
+   runs, `screen` = the labels) ║ HTTPS ║ `app/api/interpret/route.ts` (11 s budget from its
+   first line) → `features/interpret/server/interpret.ts` (model from `models.ts`, 5 s, 300
+   output tokens, labels as a third system message after the two cached ones) ║ HTTPS ║
+   Anthropic → up to 3 actions → a draft's placeholder subject and body written by
+   `composeEmail.ts` (second model call, `emailPrompt.ts`, sender's first name, 4 s, skipped
+   with under 2.5 s left) → `supportedActions` (empty if any kind is unsupported) →
    `core/commands/validateActions.ts` (all or nothing; `shortcutRules.ts` denylist,
-   `emailRules.ts`, a draft only alone) → run in order, waiting in `frontApp.ts` until an
-   opened or switched app is in front before keys or typing. AI unreachable, timed out or
-   invalid → "Smart commands aren't working right now"; no actions → the parser's message
+   `emailRules.ts`, a draft only alone, a click names a label said or shown, else "I don't see
+   a button for that.") → `shell/commands/lateAnswer.ts`: after 4 s, screen actions
+   (`core/commands/screenActions.ts`) need the same app and window (`sameScreen`) → run in
+   order, waiting in `frontApp.ts` until an opened or switched app is in front before keys or
+   typing. The Mac's 12 s ran out → "That took too long. Try again."; AI unreachable or invalid
+   → "Smart commands aren't working right now"; no actions → the parser's message.
+   Browsers show their page tree only while a phone is connected and Listen is on:
+   `shell/commands/webPagesSwitch.ts` sends `webPages { on }` ║ stdio ║ helper `webTree.swift`
+   (`AXEnhancedUserInterface` on Chromium browsers at that moment, at launch and activation)
 6. `command.result { status, message }` ║ LAN ║ the phone shows Heard "…" and the message.
-   No `command.received` in 5 s → "Can't reach"; no result 15 s after it → "No answer".
+   While waiting: "Still working…" at 3 s, "Slow connection, still trying…" at 8 s. A talk press
+   while waiting sends `command.cancel { commandId }` ║ LAN ║ `commandReceiver.ts` aborts that
+   command (no reply, speech or choice) and the phone drops its late result.
+   No `command.received` in 5 s → "Can't reach"; no result 17 s after it → "No answer".
    These limits only run while the app is active. App in the background or the link
    dropped: the phone stays "sending", and once a session is back it sends
    `command.lookup { commandId }` (only to a Mac whose hello lists `commandLookup`; others

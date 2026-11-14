@@ -5,8 +5,8 @@ evals). A set that drops below its row is rerun twice more and judged on the mid
 
 | Set | Score | Recorded | Notes |
 |---|---|---|---|
-| Tuning | 65/68 | 2026-11-15 | Middle of 3, email step wired. Long-standing misses: "find on this page", "search in notion" |
-| Held-out | 40/41 | 2026-11-15 | Middle of 3. Long-standing miss: "press command q" (the Mac's shortcut filter blocks it anyway) |
-| Mac actions | 47/48 | 2026-11-15 | Middle of 3 (48, 47, 45 with two API errors) |
-| Addresses | 9/10 | 2026-11-15 | Middle of 3; the miss is a flaky empty answer for "fourteen oh four" that passes 3/3 when called directly |
-| Email | 11/15 | 2026-11-15 | Middle of 3. Misses: a name guessed from the address ("Hi team,", "Hi Dev,"), 2-word subjects |
+| Tuning | 65/68 | 2026-11-15 | End of the email batch. Long-standing misses: "find on this page", "search in notion", "what's the weather in bangalore" (drops "in") |
+| Held-out | 39/41 | 2026-11-15 | Dropped from 40; reruns 40 and 39, middle 39. Misses: "press command q" (always, the shortcut filter blocks it anyway), "thoda aur" (the Mac's rules catch it first) |
+| Mac actions | 47/48 | 2026-11-15 | Miss: "neeche karo" read as volume down (the Mac's rules catch it first) |
+| Addresses | 10/10 | 2026-11-15 | |
+| Email | 14/15 | 2026-11-15 | Miss: "Hi team," for team@ — correct under the new greeting rule since "team" was said; the case needs updating |

@@ -288,7 +288,7 @@ Too large or repetitive for Edit means the file should be split, not scripted.
 - **Contacts lookup for email drafts (later step).** "Email Samar" opens a draft with an
   empty To. Plan in `engineering/contacts-lookup-plan.md`: interpreter returns a name, the
   helper looks it up in macOS Contacts, one → fill, several → "Which one?", none → empty To
-  plus a spoken line. Contacts never leave the Mac. Needs an eleventh helper verb.
+  plus a spoken line. Contacts never leave the Mac. Needs a twelfth helper verb.
 
 **Everything is real.** No mocks of our own apps, no fake agent, no stub to replace later.
 If a feature needs phone and Mac, build both halves in it. Empty and correct beats full and
@@ -501,9 +501,10 @@ value falls back instead of crashing. Nothing secret in MMKV.
 ### The Swift helper decides nothing
 
 - It answers "what's on screen?" and obeys "do this". No logic, no matching.
-- Ten verbs: `snapshot`, `click`, `key`, `type`, `capture`, `overlay`, `scroll`, `systemKey`,
-  `window`, `brightness`. `overlay` is defined in the protocol in feature 3 and implemented in
-  feature 7; the last four arrived with the Mac actions batch.
+- Eleven verbs: `snapshot`, `click`, `key`, `type`, `capture`, `overlay`, `scroll`,
+  `systemKey`, `window`, `brightness`, `webPages`. `overlay` is defined in the protocol in
+  feature 3 and implemented in feature 7; `scroll` to `brightness` arrived with the Mac actions
+  batch; `webPages` (browser page trees on or off) with the screen-aware commands.
 - Spawned once at startup, long-lived, newline-delimited JSON over stdio, `fflush(stdout)`
   after every line, respawn with backoff on crash, replay nothing.
 - Snapshot walk is budgeted by element count and time (~500 elements / 150 ms,

@@ -45,4 +45,25 @@ web dev server. Use a made-up address of the same shape as a real one, never a r
 | 23 | "email rahul verma 1404 at gmail dot com in hindi saying I'll be late" | Body in Hindi (Devanagari) |
 | 24 | "email rahul verma 1404 at gmail dot com subject demo update body the demo moved to friday" | Subject "Demo update", body "The demo moved to Friday." |
 | 25 | Any draft: the body has no "[", no "hope this email finds you well", no emojis, no dashes | Plain text only |
-| 26 | Any draft, then read the web server log | One line per draft: `composed in … ms` or `fallback: <reason> in … ms`, never the email text; on fallback the rough draft still opens |
+| 26 | Any draft, then read the web server log | One line per draft: `composed in … ms`, `fallback: <reason> in … ms` or `skipped: … ms left`, never the email text; the draft still opens either way |
+| 26a | "draft a mail to Jack, email is jack dot miller at example dot com, regarding how are you, write a long healthy email" | Draft opens with a full email; phone shows "Still working…" from 3 s; the log shows `[interpret] answered in … ms` then `[email] composed in … ms` |
+
+## Screen-aware commands
+
+| # | Do, then say | Expected |
+|---|---|---|
+| 27 | Phone connected, Listen on, then open Chrome on a Gmail compose to yourself: "send the mail" | "Send can't be undone. Confirm on your phone."; tap → the mail is sent |
+| 28 | Chrome on a test page with a "Pay" button: "make payment" | "Pay can't be undone. Confirm on your phone."; don't tap → nothing is paid |
+| 29 | Chrome on a page with no button for it: "submit the form" | "I don't see a button for that." |
+| 30 | A blocked app in front: "send it" | Refused as before; its labels never leave the Mac |
+| 31 | Listen off, then on, then "send the mail" on a Gmail compose | Works on the first try after Listen comes back on |
+
+## Waiting, cancel and late answers
+
+| # | Do | Expected |
+|---|---|---|
+| 32 | A long email draft on a slow network (Network Link Conditioner, 3G) | "Still working…" at 3 s, "Slow connection, still trying…" at 8 s, then the draft |
+| 33 | Say a long draft, then press talk again while "Still working…" shows and say "open Calculator" | The draft never opens; Calculator opens; the phone shows only the second result |
+| 34 | Slow network: say "make payment" on the test page, then switch to Finder before the answer | "The screen changed, so I didn't do it." No confirm |
+| 35 | Same as 34 but stay on the page | The usual Pay confirm |
+| 36 | Web server stopped mid-answer (or a request over 12 s) | "That took too long. Try again." — not "Smart commands aren't working right now" |

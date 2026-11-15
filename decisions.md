@@ -4,7 +4,7 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
-## 2026-11-15 — Emails get their own writing step; the sender's first name goes to the model
+## 2026-11-15 — Emails get their own writing step; the sender's first name goes to the model for the sign-off
 
 When interpret returns a draft, `composeEmail.ts` calls the model once more with a prompt that
 only writes emails (dictated words kept, no invented details, sign-off with the sender's first

@@ -300,7 +300,9 @@ boundary.
    helper's `key` and `type` verbs. Tabs: `tabIntents.ts` picks the named, frontmost or
    default browser → `browserScripts.ts` JXA lists tabs by index ║ Apple Events ║ the browser
    → `core/commands/matchTabs.ts` → close or switch by index. Drafts:
-   `core/commands/draftUrl.ts` → `open mailto:` or Gmail compose, never sent. Addresses:
+   `core/commands/draftUrl.ts` → `open mailto:` or Gmail compose, never sent; with no app
+   named, `shell/commands/mailtoHandler.ts` asks macOS for the mailto handler (JXA ║ macOS)
+   and a browser gets Gmail compose (`draftOpensIn`). Addresses:
    `core/commands/emailRules.ts` checks each comma-separated recipient against
    `spokenForm.ts` (spoken digits and separators in written form): exact, close (flagged in
    the reply) or dropped; "myself" and "type my email" use the paired phone's account email

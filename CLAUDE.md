@@ -94,6 +94,20 @@ these rules (`!`, comments).
 - Don't ask how to implement something. Decide, build, report the choice.
 - New dependency → justify it in the report.
 
+### AI evals
+
+- No AI evals while a batch is in progress, whatever the change.
+- At the very end of every batch, after all changes and before the final commits, run every
+  eval set once: tuning, held-out, Mac actions, addresses (`pnpm eval:interpret` in web) and
+  email (`node --env-file=.env.local scripts/evalEmail.ts`). Always, even when the changes
+  were minor or already tested on the phone.
+- Only when a set drops below its last recorded score: rerun that set twice more and decide on
+  the middle score.
+- The last recorded score per set lives in `engineering/eval-scores.md`; update it after each
+  end-of-batch run.
+- Run the evals in the background and report once when they finish, without polling in
+  between.
+
 ## Git flow
 
 **Ask the user before every commit, in every repo.** Show what will be committed and wait

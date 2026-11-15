@@ -33,6 +33,7 @@ web dev server. Use a made-up address of the same shape as a real one, never a r
 | 19 | Tabs open in Safari (in front) and Chrome, both with a Grok tab: "close the grok tab" | The Safari one closes |
 | 19a | A browser set as the default email app (System Settings or Mail → Settings → Default email reader): "draft a mail to rahul verma 1404 at gmail dot com regarding how are you" | Gmail compose opens in Chrome with To, subject and body filled |
 | 19b | Mail set as the default email app: the same command | Mail opens the draft, as before |
+| 19c | Several Chrome profiles shown on startup, Chrome quit: "write a mail to John at john smith 1404 at gmail dot com regarding how are you", then again with Chrome open | Both times Gmail compose opens with To, subject and body; no profile picker the first time |
 
 ## Email writing step
 

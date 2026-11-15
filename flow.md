@@ -300,10 +300,26 @@ boundary.
    helper's `key` and `type` verbs. Tabs: `tabIntents.ts` picks the named, frontmost or
    default browser → `browserScripts.ts` JXA lists tabs by index ║ Apple Events ║ the browser
    → `core/commands/matchTabs.ts` → close or switch by index. Drafts:
-   `core/commands/draftUrl.ts` → `open mailto:` or Gmail compose, never sent
+   `core/commands/draftUrl.ts` → `open mailto:` or Gmail compose, never sent. Addresses:
+   `core/commands/emailRules.ts` checks each comma-separated recipient against
+   `spokenForm.ts` (spoken digits and separators in written form): exact, close (flagged in
+   the reply) or dropped; "myself" and "type my email" use the paired phone's account email
+   on the Mac, never sent to the AI
+5b. Mac actions: `core/commands/parseSystemCommand.ts` and `parseLevelCommand.ts` run before
+   every other rule (scroll, navigate, media, window, lock, volume, brightness, "more") →
+   `shell/commands/systemIntents.ts`: helper `scroll` (wheel burst at the front window's
+   centre), `systemKey` (media and brightness keys), `window` (Accessibility frame and
+   flags), `key` for back/forward/reload, top/bottom and lock ║ stdio ║ the helper. Volume:
+   `levelIntents.ts` → `osaScript.ts` `get/set volume` ║ macOS. Brightness: helper
+   `brightness` (DisplayServices through `dlopen`), the brightness keys when it is missing.
+   `core/commands/levelChange.ts` clamps; `stepMemory.ts` keeps the last step 60 s for "more",
+   cleared when the phone disconnects (`shell/lan/phoneLink.ts`)
 5a. When the parser has no match or no such app: `shell/interpret/interpretApi.ts` (Mac session
-   bearer, 7 s) ║ HTTPS ║ `app/api/interpret/route.ts` → `features/interpret/server/interpret.ts`
-   (model from `models.ts`) ║ HTTPS ║ Anthropic → up to 3 actions →
+   bearer, 7 s, `supports` = the kinds this Mac runs) ║ HTTPS ║ `app/api/interpret/route.ts` →
+   `features/interpret/server/interpret.ts` (model from `models.ts`) ║ HTTPS ║ Anthropic → up
+   to 3 actions → a draft's subject and body rewritten by `composeEmail.ts` (second model
+   call, `emailPrompt.ts`, sender's first name from the session, 4 s, the rough draft kept on
+   failure) → `supportedActions` (empty if any kind is unsupported) →
    `core/commands/validateActions.ts` (all or nothing; `shortcutRules.ts` denylist,
    `emailRules.ts`, a draft only alone) → run in order, waiting in `frontApp.ts` until an
    opened or switched app is in front before keys or typing. AI unreachable, timed out or

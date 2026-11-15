@@ -4,6 +4,68 @@ Append-only. Newest first. About four lines each: what, why, what was rejected, 
 reverse. A later decision that reverses one adds a new entry linking back; history is never
 edited.
 
+## 2026-11-15 — Emails get their own writing step; the sender's first name goes to the model
+
+When interpret returns a draft, `composeEmail.ts` calls the model once more with a prompt that
+only writes emails (dictated words kept, no invented details, sign-off with the sender's first
+name from the session). Interpret only detects the draft and its recipients. On any failure
+(4 s timeout, no retries) the interpret step's rough subject and body stay. Rejected: one
+prompt for both (it drifted and the grammar is at its limit). Reverse: drop the call in the
+route and restore the draftEmail writing line.
+
+## 2026-11-15 — The Mac picks the browser and mail app
+
+A named browser or mail app is kept even when it is not installed, so the Mac can answer
+"<name> isn't installed." instead of "I can't do that yet". With none named, Chrome opens when
+installed, else the macOS default; drafts open the default mail app unless one is named. Tabs
+are searched in the front browser, then Chrome, then the rest. Rejected: deciding in the AI
+(it cannot see what is installed). Reverse: `chooseBrowser` back to installed-only matching.
+
+## 2026-11-15 — Spoken addresses are compared in written form; my own address stays on the Mac
+
+`spokenForm.ts` turns "one four zero four at gmail dot com" into "1404@gmail.com" for
+comparisons only. Drafts keep exact matches and flag close ones (within 2 edits after a spoken
+"at"); typing accepts written form only for addresses, links and numbers, exact. "Myself" and
+"type my email" read the account email on the Mac; it never reaches the AI. Rejected: an AI
+self marker in the schema (needs a shared change). Reverse: drop `spokenForm` from both checks.
+
+## 2026-11-15 — System actions: rules first, AI second; lock and "more" rules only
+
+Scroll, media, volume, brightness, window and lock phrases are matched on the Mac before the
+web and app rules: no round trip, no cost, works when Smart commands are down. The AI gets
+the same kinds for other wording, except lock and "more", which stay rules-only (a fuzzy
+match should never lock the Mac, and "more" needs the Mac's last step). Rejected: AI for
+everything (slow, costly, guesses). Reverse: drop `parseSystemCommand` from `parseCommand`.
+
+## 2026-11-15 — Lock is its own action, not a shortcut
+
+The shortcut filter blocks every mod+Q on purpose. Lock sends exactly ctrl+cmd+Q through
+the helper's `key` verb and nothing else, so the filter stays strict. Rejected: allowing
+ctrl+mod+q in `shortcutRules.ts` (one rule weakened for one shortcut). Reverse: delete the
+lock intent and its rules.
+
+## 2026-11-15 — The interpret schema is sized to the model's grammar limit
+
+Anthropic compiles the action union into a grammar with a size cap, and this batch hit it.
+So volume and brightness share one nullable `percent` field, `keys.key` is a plain string
+the Mac checks against its key lists, number fields carry only loose ceilings (the Mac
+clamps), and lock and "more" left the schema. Rejected: separate `by` and `level` fields
+(over the cap). Reverse: once the cap is lifted or actions are split across calls.
+
+## 2026-11-15 — Interpret answers are filtered by what the Mac supports
+
+The Mac sends `supports` (its action kinds); the server returns an empty list if any action
+is a kind the Mac cannot run, so an older Mac says "I can't do that yet" instead of failing
+its schema. All or nothing, like `validateActions`, since running part of a request is a
+guess. Rejected: dropping only the unknown actions. Reverse: remove the filter in the route.
+
+## 2026-11-15 — Brightness through private DisplayServices with a key fallback
+
+The brightness keys only step, so exact levels ("to 40%") and readings need DisplayServices,
+loaded with `dlopen` so a missing symbol is `unavailable`, not a crash; the agent then presses
+the keys (16 down, then up). Built-in display only. Rejected: keys only (no exact level or
+reply number), DDC (external displays, later). Reverse: drop the `brightness` verb.
+
 ## 2026-11-13 — A lost link mid-command is asked about, not failed
 
 iOS closes the socket in the background while the Mac keeps running, so the phone keeps
